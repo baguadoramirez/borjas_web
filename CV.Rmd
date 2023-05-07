@@ -31,10 +31,11 @@ output:
 
 
 <div class="column-left">
-From Toledo, living in Barcelona.
+From Toledo, living *who knows where...*
 <br>
 <b>Contact:</b>
 <br> &#x2709; E-mail : [borja.aguado@ub.edu](mailto:borja.aguado@ub.edu)
+<br> <img src="images/scholar.png" width="20px"> Google Scholar: [Borja Aguado](https://scholar.google.es/citations?user=-_N8q0UAAAAJ&hl=en&oi=ao)
 <br> <img src="images/github.png" width="20px"> GitHub: [baguadoramirez](https://github.com/baguadoramirez)
 <br> <img src="images/OSF.png" width="20px"> OSF: [baguadoramirez](https://osf.io/tj628/)
 <br> <img src="images/linkedin.png" width="20px"> LikedIn: [Borja Aguado](https://www.linkedin.com/in/borja-a-606a59119)
@@ -71,17 +72,35 @@ Bachelor's degree in Psychology (Universidad Autónoma de Madrid; 2012-2016)
   
 Master's degree in Research in Behaviour and Cognition (Universtat de Barcelona; 2016-2017)
 
-PhD Candidate under the trainee of [Joan López-Moliner](http://www.ub.edu/viscagroup/joan/) (Universitat de Barcelona; 2017-202?)
+PhD Candidate under the trainee of [Joan López-Moliner](http://www.ub.edu/viscagroup/joan/) (Universitat de Barcelona; 2017-2022)
 
-  - Provisional thesis name: <u> Active Sampling of the Optic Flow </u>
+  - Thesis name: <u> Estimating motion and time to contact in 3D environments: Priors matter. </u>
+  
+Postdoctoral researcher at Technische Universitëit Darmstadt (2022-2025)
 
 ## Teaching
 
-*Perception & Action* at Psychology Bachelor's degree level (Universitat de Barcelona). 
+- *Perception & Action* of the Psychology Bachelor's degree program at the Universitat de Barcelona.
+
+- *Experimental Practicum* of the Psychology Bachelor's degree program at the Technische Universitëit Darmstadt.
+
+- *_Handeln_ (Perception & Action)* of the Cognitive Sciences Bachelor's degree program at the Technische Universitëit Darmstadt.
+
+- *Experimental Practicum* of the Cognitive Sciences Bachelor's degree program at the Technische Universitëit Darmstadt.
 
 ## Academic Curriculum
 ### Publications
+
+- Estimating motion and time to contact in 3D environments: Priors matter. [Click Here to download](https://diposit.ub.edu/dspace/bitstream/2445/193301/1/BAR_PhD_THESIS.pdf)
+
+- Aguado, B., & López-Moliner, J. (2021). Gravity and Known Size Calibrate Visual Information to Time Parabolic Trajectories. *Frontiers in Human Neuroscience, 15, 642025*.[doi: 10.3389/fnhum.2021.642025](https://doi.org/10.3389/fnhum.2021.642025)
+
+- Aguado, B., & López-Moliner, J. (2021). Flexible viewing time when estimating time-to-contact in 3D parabolic trajectories. *Journal of Vision, 21(4), 9-9*. [doi: 10.1167/jov.21.4.9](https://doi.org/10.1167/jov.21.4.9)
+
 - Aguado, B., & López-Moliner, J. (2019). Perceived speed of motion in depth modulates misjudgements of approaching trajectories consistently with a slow prior. *Vision research, 159, 1-9.* DOI: https://doi.org/10.1016/j.visres.2019.03.009
+
+
+
 
 ### Poster presentations
 - Aguado, R, Borja; M. Maho, Cristina M; Rucci, Michele; Brenner, Eli. (2016, September). *Evidence for a temporal component in the influence of the colour of the surrounding.* European Conference on Visual Perception (ECVP), Barcelona.
@@ -90,6 +109,7 @@ PhD Candidate under the trainee of [Joan López-Moliner](http://www.ub.edu/visca
 
 
 ### Oral presentations
+
 - Aguado, Borja; López-Moliner, Joan. (2019, June). *Accuracy and precision of time-to-contact estimates based on knowing size and gravity.* 8th Iberian Conference on Perception  (CIP), Sna Lorenzo del Escorial, Madrid (Spain).
 
 

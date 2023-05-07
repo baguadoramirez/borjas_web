@@ -13,18 +13,25 @@
 
 <title>Borja Aguado</title>
 
-<script src="site_libs/header-attrs-2.5/header-attrs.js"></script>
-<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<script src="site_libs/header-attrs-2.14/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/paper.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<link href="site_libs/anchor-sections-1.0/anchor-sections.css" rel="stylesheet" />
-<script src="site_libs/anchor-sections-1.0/anchor-sections.js"></script>
 <html>
 <link rel="shortcut icon" href="./images/favicon.png">
 </html>
@@ -40,11 +47,6 @@
     </style>
 
 <style type="text/css">code{white-space: pre;}</style>
-<style type="text/css">
-  pre:not([class]) {
-    background-color: white;
-  }
-</style>
 <script type="text/javascript">
 if (window.hljs) {
   hljs.configure({languages: []});
@@ -57,32 +59,8 @@ if (window.hljs) {
 
 
 
-<style type="text/css">
-h1 {
-  font-size: 34px;
-}
-h1.title {
-  font-size: 38px;
-}
-h2 {
-  font-size: 30px;
-}
-h3 {
-  font-size: 24px;
-}
-h4 {
-  font-size: 18px;
-}
-h5 {
-  font-size: 16px;
-}
-h6 {
-  font-size: 12px;
-}
-.table th:not([align]) {
-  text-align: left;
-}
-</style>
+
+
 
 <link rel="stylesheet" href="styles.css" type="text/css" />
 
@@ -93,10 +71,6 @@ h6 {
   max-width: 940px;
   margin-left: auto;
   margin-right: auto;
-}
-code {
-  color: inherit;
-  background-color: rgba(0, 0, 0, 0.04);
 }
 img {
   max-width:100%;
@@ -113,40 +87,16 @@ button.code-folding-btn:focus {
 summary {
   display: list-item;
 }
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
 </style>
 
 
 <style type="text/css">
-/* padding for bootstrap navbar */
-body {
-  padding-top: 64px;
-  padding-bottom: 40px;
-}
-/* offset scroll position for anchor links (for fixed navbar)  */
-.section h1 {
-  padding-top: 69px;
-  margin-top: -69px;
-}
-.section h2 {
-  padding-top: 69px;
-  margin-top: -69px;
-}
-.section h3 {
-  padding-top: 69px;
-  margin-top: -69px;
-}
-.section h4 {
-  padding-top: 69px;
-  margin-top: -69px;
-}
-.section h5 {
-  padding-top: 69px;
-  margin-top: -69px;
-}
-.section h6 {
-  padding-top: 69px;
-  margin-top: -69px;
-}
 .dropdown-submenu {
   position: relative;
 }
@@ -174,7 +124,7 @@ body {
   margin-right: -10px;
 }
 .dropdown-submenu:hover>a:after {
-  border-left-color: #ffffff;
+  border-left-color: #adb5bd;
 }
 .dropdown-submenu.pull-left {
   float: none;
@@ -186,7 +136,7 @@ body {
 }
 </style>
 
-<script>
+<script type="text/javascript">
 // manage active state of menu based on current page
 $(document).ready(function () {
   // active menu anchor
@@ -197,10 +147,23 @@ $(document).ready(function () {
   var menuAnchor = $('a[href="' + href + '"]');
 
   // mark it active
-  menuAnchor.parent().addClass('active');
+  menuAnchor.tab('show');
 
   // if it's got a parent navbar menu mark it active as well
   menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
 });
 </script>
 
@@ -212,7 +175,6 @@ $(document).ready(function () {
   max-height: 500px;
   min-height: 44px;
   overflow-y: auto;
-  background: white;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
@@ -279,7 +241,7 @@ $(document).ready(function () {
 <div class="navbar navbar-default  navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -290,19 +252,6 @@ $(document).ready(function () {
       <ul class="nav navbar-nav">
         <li>
   <a href="CV.html">Curriculum Vitae</a>
-</li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-    Percepcion y Atencion
-     
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu">
-    <li class="dropdown-header">Demos</li>
-    <li>
-      <a href="demos.html">Demos &amp; Psychopy code</a>
-    </li>
-  </ul>
 </li>
 <li>
   <a href="Current_Projects.html">Projects</a>
@@ -315,7 +264,7 @@ $(document).ready(function () {
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-<div class="fluid-row" id="header">
+<div id="header">
 
 
 
@@ -356,19 +305,85 @@ figure {
 figurecaption{
   text-align: justify;
 }
+header {
+  display: block;
+}
+
 </style>
-<p><figure_side style="float: right"> <b>Contact:</b> <br> ✉ E-mail : <a href="mailto:borja.aguado@ub.edu">borja.aguado@ub.edu</a> <br> <img src="images/github.png" width="20px"> GitHub: <a href="https://github.com/baguadoramirez">baguadoramirez</a> <br> <img src="images/OSF.png" width="20px"> OSF: <a href="https://osf.io/tj628/">baguadoramirez</a> <br> <img src="images/linkedin.png" width="20px"> LikedIn: <a href="https://www.linkedin.com/in/borja-a-606a59119">Borja Aguado</a> <!--<br> <img src="images/twitter.png" width="20px"> Twitter: [b_aguador](https://twitter.com/b_aguador)--> <br><img src="images/me.jpeg" width="270px"> </figure_side></p>
-<p>Hi! My name is Borja Aguado and this is my personal web page.</p>
-<p>In this website I intend to publish mainly the code of everything that I am doing on a daily basis. Whether it’s research, teaching or my nerdy stuff. I love writting experiments using Python and Psychopy. Besides, I´m a data visualization nerd. So, I will share code on how to make pretty and insightful plots.</p>
-<hr />
-<p>My first paper <em>“Perceived speed of motion in depth modulates misjudgements of approaching trajectories consistently with a slow prior”</em> along with my awesome supervisor <a href="http://www.ub.edu/viscagroup/joan/">Joan López-Moliner</a> was recently publish. If you want to have a look at it, don´t hesitate to click <a href="https://www.sciencedirect.com/science/article/pii/S0042698919300756">here</a>.</p>
-<hr />
-<p><img src="images/new.gif" width="20px"> Due to the Coronavirus (SARS-CoV-2) crisis, I have created an application using the Shiny library to monitor the evolution of the data. It is a simple application in Spanish, mainly designed so that anyone without knowledge of how to interpret a graph can follow the evolution of the data. You can check it out at the following link.</p>
-<p><a href="https://baguadoramirez.shinyapps.io/covid/">Click here!</a></p>
-<p>Please, stay safe!</p>
-<hr />
+<p><figure_side style="float: right"> <b>Contact:</b> <br> ✉ E-mail :<a
+href="mailto:borja.aguado@ub.edu">borja.aguado@ub.edu</a> <br>
+<img src="images/scholar.png" width="20px"> Google Scholar: <a
+href="https://scholar.google.es/citations?user=-_N8q0UAAAAJ&amp;hl=en&amp;oi=ao">Borja
+Aguado</a> <br> <img src="images/github.png" width="20px"/> GitHub:<a
+href="https://github.com/baguadoramirez">baguadoramirez</a> <br>
+<img src="images/OSF.png" width="20px"/> OSF: <a
+href="https://osf.io/tj628/">baguadoramirez</a> <br>
+<img src="images/linkedin.png" width="20px"/> LikedIn: <a
+href="https://www.linkedin.com/in/borja-a-606a59119">Borja
+Aguado</a><br><img src="images/me.png" width="270px"/>
+</figure_side></p>
+<p>Welcome to my personal webpage! Here,I’ll be sharing updates on my
+latest projects, insights on my interests, and all sorts of exciting
+content.</p>
+<p>I’m also a data visualization nerd and I can’t wait to share with you
+my insights on how to make stunning and informative plots. So, whether
+you’re a fellow coding enthusiast or a data visualization aficionado,
+you’ll find plenty of exciting content here.</p>
+<p>I want to hear from you! So don’t be shy, leave a comment or send me
+a message. Whether you have a question, a suggestion, or just want to
+say hello, I’m all ears.</p>
+<p>Stay tuned for updates and feel free to leave a comment or send me a
+message. I’d love to hear from you!</p>
+<hr>
+<p><strong>Academic news</strong></p>
+<ul>
+<li>
+<b>Doctoral thesis: </b>Aguado, B. (2022). Estimating motion and time to
+contact in 3D environments: Priors matter. <a
+href="https://diposit.ub.edu/dspace/bitstream/2445/193301/1/BAR_PhD_THESIS.pdf">Click
+Here to download</a>
+</li>
+<li>
+<b>Journal article: </b>Aguado, B., &amp; López-Moliner, J. (2021).
+Gravity and Known Size Calibrate Visual Information to Time Parabolic
+Trajectories. Frontiers in Human Neuroscience, 15, 642025.<a
+href="https://doi.org/10.3389/fnhum.2021.642025">doi:
+10.3389/fnhum.2021.642025</a>
+</li>
+<li>
+<b>Journal article: </b>Aguado, B., &amp; López-Moliner, J. (2021).
+Flexible viewing time when estimating time-to-contact in 3D parabolic
+trajectories. Journal of Vision, 21(4), 9-9. <a
+href="https://doi.org/10.1167/jov.21.4.9">doi: 10.1167/jov.21.4.9</a>
+</li>
+<li>
+<b>Journal article: </b>Aguado, B, and López-Moliner, J. “Perceived
+speed of motion in depth modulates misjudgements of approaching
+trajectories consistently with a slow prior.” Vision research 159
+(2019): 1-9.<a href="https://doi.org/10.1016/j.visres.2019.03.009">doi:
+10.1016/j.visres.2019.03.009</a>
+</li>
+</ul>
+<hr>
+<p><strong>SARS-CoV-2</strong></p>
+<!-- <img src="images/new.gif" width="20px"/> -->
+<p>Due to the ongoing Coronavirus (SARS-CoV-2) crisis, I’ve developed a
+Shiny library to track the progression of the data. The app is available
+in Spanish and is designed to be as user-friendly as possible, allowing
+anyone to easily interpret the data without needing any prior
+knowledge.</p>
+<p>If you’re interested, you can check out the application at the
+following link <a
+href="https://baguadoramirez.shinyapps.io/covid/">(Click here!)</a>.
+It’s a simple but effective tool that has proven to be incredibly
+helpful during these challenging times to friends and relatives. I hope
+it provides you with valuable insights into the evolution of the data,
+and feel free to share it with anyone who might find it useful.</p>
+Please, stay safe!<br />
+
+<hr>
 <p>Thanks for reading and keep rocking! 🔥</p>
-<p><img src="images/logo_reveal_black.png" width="600px"></p>
+<p><img src="images/logo_reveal_black.png" width="600px"/></p>
 
 <html>
 <footer role="contentinfo" id="site-footer">
@@ -403,7 +418,7 @@ $(document).ready(function () {
 
 $(document).ready(function () {
   $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open')
+    $(this).parent().toggleClass('nav-tabs-open');
   });
 });
 </script>

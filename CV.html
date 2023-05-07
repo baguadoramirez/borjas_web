@@ -13,12 +13,22 @@
 
 <title>Borja Aguado Ramírez</title>
 
-<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<script src="site_libs/header-attrs-2.14/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/paper.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
 <script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
 <link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
 <script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
@@ -29,12 +39,17 @@
 <link rel="shortcut icon" href="./images/favicon.png">
 </html>
 
-<style type="text/css">code{white-space: pre;}</style>
+
 <style type="text/css">
-  pre:not([class]) {
-    background-color: white;
-  }
-</style>
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
 <script type="text/javascript">
 if (window.hljs) {
   hljs.configure({languages: []});
@@ -47,32 +62,8 @@ if (window.hljs) {
 
 
 
-<style type="text/css">
-h1 {
-  font-size: 34px;
-}
-h1.title {
-  font-size: 38px;
-}
-h2 {
-  font-size: 30px;
-}
-h3 {
-  font-size: 24px;
-}
-h4 {
-  font-size: 18px;
-}
-h5 {
-  font-size: 16px;
-}
-h6 {
-  font-size: 12px;
-}
-.table th:not([align]) {
-  text-align: left;
-}
-</style>
+
+
 
 <link rel="stylesheet" href="styles.css" type="text/css" />
 
@@ -83,10 +74,6 @@ h6 {
   max-width: 940px;
   margin-left: auto;
   margin-right: auto;
-}
-code {
-  color: inherit;
-  background-color: rgba(0, 0, 0, 0.04);
 }
 img {
   max-width:100%;
@@ -103,40 +90,16 @@ button.code-folding-btn:focus {
 summary {
   display: list-item;
 }
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
 </style>
 
 
 <style type="text/css">
-/* padding for bootstrap navbar */
-body {
-  padding-top: 64px;
-  padding-bottom: 40px;
-}
-/* offset scroll position for anchor links (for fixed navbar)  */
-.section h1 {
-  padding-top: 69px;
-  margin-top: -69px;
-}
-.section h2 {
-  padding-top: 69px;
-  margin-top: -69px;
-}
-.section h3 {
-  padding-top: 69px;
-  margin-top: -69px;
-}
-.section h4 {
-  padding-top: 69px;
-  margin-top: -69px;
-}
-.section h5 {
-  padding-top: 69px;
-  margin-top: -69px;
-}
-.section h6 {
-  padding-top: 69px;
-  margin-top: -69px;
-}
 .dropdown-submenu {
   position: relative;
 }
@@ -164,7 +127,7 @@ body {
   margin-right: -10px;
 }
 .dropdown-submenu:hover>a:after {
-  border-left-color: #ffffff;
+  border-left-color: #adb5bd;
 }
 .dropdown-submenu.pull-left {
   float: none;
@@ -176,7 +139,7 @@ body {
 }
 </style>
 
-<script>
+<script type="text/javascript">
 // manage active state of menu based on current page
 $(document).ready(function () {
   // active menu anchor
@@ -187,10 +150,23 @@ $(document).ready(function () {
   var menuAnchor = $('a[href="' + href + '"]');
 
   // mark it active
-  menuAnchor.parent().addClass('active');
+  menuAnchor.tab('show');
 
   // if it's got a parent navbar menu mark it active as well
   menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
 });
 </script>
 
@@ -202,7 +178,6 @@ $(document).ready(function () {
   max-height: 500px;
   min-height: 44px;
   overflow-y: auto;
-  background: white;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
@@ -328,7 +303,7 @@ div.tocify {
 
 
 <!-- setup 3col/9col grid for toc_float and main content  -->
-<div class="row-fluid">
+<div class="row">
 <div class="col-xs-12 col-sm-4 col-md-3">
 <div id="TOC" class="tocify">
 </div>
@@ -342,7 +317,7 @@ div.tocify {
 <div class="navbar navbar-default  navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -353,19 +328,6 @@ div.tocify {
       <ul class="nav navbar-nav">
         <li>
   <a href="CV.html">Curriculum Vitae</a>
-</li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-    Percepcion y Atencion
-     
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu">
-    <li class="dropdown-header">Demos</li>
-    <li>
-      <a href="demos.html">Demos &amp; Psychopy code</a>
-    </li>
-  </ul>
 </li>
 <li>
   <a href="Current_Projects.html">Projects</a>
@@ -378,7 +340,7 @@ div.tocify {
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-<div class="fluid-row" id="header">
+<div id="header">
 
 
 
@@ -405,7 +367,19 @@ div.tocify {
 }
 </style>
 <div class="column-left">
-<p>From Toledo, living in Barcelona. <br> <b>Contact:</b> <br> ✉ E-mail : <a href="mailto:borja.aguado@ub.edu">borja.aguado@ub.edu</a> <br> <img src="images/github.png" width="20px"> GitHub: <a href="https://github.com/baguadoramirez">baguadoramirez</a> <br> <img src="images/OSF.png" width="20px"> OSF: <a href="https://osf.io/tj628/">baguadoramirez</a> <br> <img src="images/linkedin.png" width="20px"> LikedIn: <a href="https://www.linkedin.com/in/borja-a-606a59119">Borja Aguado</a> <!--<br> <img src="images/twitter.png" width="20px"> Twitter: [b_aguador](https://twitter.com/b_aguador)--> <br></p>
+<p>From Toledo, living <em>who knows where…</em> <br> <b>Contact:</b>
+<br> ✉ E-mail : <a
+href="mailto:borja.aguado@ub.edu">borja.aguado@ub.edu</a> <br>
+<img src="images/scholar.png" width="20px"> Google Scholar: <a
+href="https://scholar.google.es/citations?user=-_N8q0UAAAAJ&amp;hl=en&amp;oi=ao">Borja
+Aguado</a> <br> <img src="images/github.png" width="20px"> GitHub: <a
+href="https://github.com/baguadoramirez">baguadoramirez</a> <br>
+<img src="images/OSF.png" width="20px"> OSF: <a
+href="https://osf.io/tj628/">baguadoramirez</a> <br>
+<img src="images/linkedin.png" width="20px"> LikedIn: <a
+href="https://www.linkedin.com/in/borja-a-606a59119">Borja Aguado</a>
+<!--<br> <img src="images/twitter.png" width="20px"> Twitter: [b_aguador](https://twitter.com/b_aguador)-->
+<br></p>
 </div>
 <div class="column-center">
 
@@ -427,48 +401,96 @@ div.tocify {
 </style>
 <div id="training" class="section level2">
 <h2>Training</h2>
-<p>Bachelor’s degree in Psychology (Universidad Autónoma de Madrid; 2012-2016)</p>
+<p>Bachelor’s degree in Psychology (Universidad Autónoma de Madrid;
+2012-2016)</p>
 <ul>
-<li>Bachelor’s thesis passed with honors: <a href="http://www.ub.edu/ecvp/poster-sessions">“Evidence for a temporal component in the influence of the colour of the surrounding”</a></li>
+<li>Bachelor’s thesis passed with honors: <a
+href="http://www.ub.edu/ecvp/poster-sessions">“Evidence for a temporal
+component in the influence of the colour of the surrounding”</a></li>
 </ul>
-<p>Master’s degree in Research in Behaviour and Cognition (Universtat de Barcelona; 2016-2017)</p>
-<p>PhD Candidate under the trainee of <a href="http://www.ub.edu/viscagroup/joan/">Joan López-Moliner</a> (Universitat de Barcelona; 2017-202?)</p>
+<p>Master’s degree in Research in Behaviour and Cognition (Universtat de
+Barcelona; 2016-2017)</p>
+<p>PhD Candidate under the trainee of <a
+href="http://www.ub.edu/viscagroup/joan/">Joan López-Moliner</a>
+(Universitat de Barcelona; 2017-2022)</p>
 <ul>
-<li>Provisional thesis name: <u> Active Sampling of the Optic Flow </u></li>
+<li>Thesis name: <u> Estimating motion and time to contact in 3D
+environments: Priors matter. </u></li>
 </ul>
+<p>Postdoctoral researcher at Technische Universitëit Darmstadt
+(2022-2025)</p>
 </div>
 <div id="teaching" class="section level2">
 <h2>Teaching</h2>
-<p><em>Perception &amp; Action</em> at Psychology Bachelor’s degree level (Universitat de Barcelona).</p>
+<ul>
+<li><p><em>Perception &amp; Action</em> of the Psychology Bachelor’s
+degree program at the Universitat de Barcelona.</p></li>
+<li><p><em>Experimental Practicum</em> of the Psychology Bachelor’s
+degree program at the Technische Universitëit Darmstadt.</p></li>
+<li><p><em><em>Handeln</em> (Perception &amp; Action)</em> of the
+Cognitive Sciences Bachelor’s degree program at the Technische
+Universitëit Darmstadt.</p></li>
+<li><p><em>Experimental Practicum</em> of the Cognitive Sciences
+Bachelor’s degree program at the Technische Universitëit
+Darmstadt.</p></li>
+</ul>
 </div>
 <div id="academic-curriculum" class="section level2">
 <h2>Academic Curriculum</h2>
 <div id="publications" class="section level3">
 <h3>Publications</h3>
 <ul>
-<li>Aguado, B., &amp; López-Moliner, J. (2019). Perceived speed of motion in depth modulates misjudgements of approaching trajectories consistently with a slow prior. <em>Vision research, 159, 1-9.</em> DOI: <a href="https://doi.org/10.1016/j.visres.2019.03.009" class="uri">https://doi.org/10.1016/j.visres.2019.03.009</a></li>
+<li><p>Estimating motion and time to contact in 3D environments: Priors
+matter. <a
+href="https://diposit.ub.edu/dspace/bitstream/2445/193301/1/BAR_PhD_THESIS.pdf">Click
+Here to download</a></p></li>
+<li><p>Aguado, B., &amp; López-Moliner, J. (2021). Gravity and Known
+Size Calibrate Visual Information to Time Parabolic Trajectories.
+<em>Frontiers in Human Neuroscience, 15, 642025</em>.<a
+href="https://doi.org/10.3389/fnhum.2021.642025">doi:
+10.3389/fnhum.2021.642025</a></p></li>
+<li><p>Aguado, B., &amp; López-Moliner, J. (2021). Flexible viewing time
+when estimating time-to-contact in 3D parabolic trajectories.
+<em>Journal of Vision, 21(4), 9-9</em>. <a
+href="https://doi.org/10.1167/jov.21.4.9">doi:
+10.1167/jov.21.4.9</a></p></li>
+<li><p>Aguado, B., &amp; López-Moliner, J. (2019). Perceived speed of
+motion in depth modulates misjudgements of approaching trajectories
+consistently with a slow prior. <em>Vision research, 159, 1-9.</em> DOI:
+<a href="https://doi.org/10.1016/j.visres.2019.03.009"
+class="uri">https://doi.org/10.1016/j.visres.2019.03.009</a></p></li>
 </ul>
 </div>
 <div id="poster-presentations" class="section level3">
 <h3>Poster presentations</h3>
 <ul>
-<li><p>Aguado, R, Borja; M. Maho, Cristina M; Rucci, Michele; Brenner, Eli. (2016, September). <em>Evidence for a temporal component in the influence of the colour of the surrounding.</em> European Conference on Visual Perception (ECVP), Barcelona.</p></li>
-<li><p>Aguado, Borja; López-Moliner, Joan. (2019, May). <em>How to move to catch flying balls with updating predictions.</em> Vision Sciences Society (VSS), St.Pete Beach, Florida.</p></li>
+<li><p>Aguado, R, Borja; M. Maho, Cristina M; Rucci, Michele; Brenner,
+Eli. (2016, September). <em>Evidence for a temporal component in the
+influence of the colour of the surrounding.</em> European Conference on
+Visual Perception (ECVP), Barcelona.</p></li>
+<li><p>Aguado, Borja; López-Moliner, Joan. (2019, May). <em>How to move
+to catch flying balls with updating predictions.</em> Vision Sciences
+Society (VSS), St.Pete Beach, Florida.</p></li>
 </ul>
 </div>
 <div id="oral-presentations" class="section level3">
 <h3>Oral presentations</h3>
 <ul>
-<li>Aguado, Borja; López-Moliner, Joan. (2019, June). <em>Accuracy and precision of time-to-contact estimates based on knowing size and gravity.</em> 8th Iberian Conference on Perception (CIP), Sna Lorenzo del Escorial, Madrid (Spain).</li>
+<li>Aguado, Borja; López-Moliner, Joan. (2019, June). <em>Accuracy and
+precision of time-to-contact estimates based on knowing size and
+gravity.</em> 8th Iberian Conference on Perception (CIP), Sna Lorenzo
+del Escorial, Madrid (Spain).</li>
 </ul>
 </div>
 </div>
 <div id="grants-fellowships" class="section level2">
 <h2>Grants &amp; Fellowships</h2>
 <ul>
-<li><p>Beca de Colaboración MECD (Colaboración Universitaria - 2016/2017)</p></li>
+<li><p>Beca de Colaboración MECD (Colaboración Universitaria -
+2016/2017)</p></li>
 <li><p>Beca de Colaboración UB (FPSC2017.3)</p></li>
-<li><p>2018FI_B00090 (April 2018 - September 2018) fellowship from Agència de Gestió d’Ajuts Universitaris i de Recerca.</p></li>
+<li><p>2018FI_B00090 (April 2018 - September 2018) fellowship from
+Agència de Gestió d’Ajuts Universitaris i de Recerca.</p></li>
 </ul>
 </div>
 
@@ -489,7 +511,7 @@ div.tocify {
 
 // add bootstrap table styles to pandoc tables
 function bootstrapStylePandocTables() {
-  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
 }
 $(document).ready(function () {
   bootstrapStylePandocTables();
@@ -507,7 +529,7 @@ $(document).ready(function () {
 
 $(document).ready(function () {
   $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open')
+    $(this).parent().toggleClass('nav-tabs-open');
   });
 });
 </script>
@@ -516,6 +538,9 @@ $(document).ready(function () {
 
 <script>
 $(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
 
     // move toc-ignore selectors from section div to header
     $('div.section.toc-ignore')
@@ -528,7 +553,7 @@ $(document).ready(function ()  {
       theme: "bootstrap3",
       context: '.toc-content',
       hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
       },
       ignoreSelector: ".toc-ignore",
       scrollTo: 0

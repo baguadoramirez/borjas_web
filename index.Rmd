@@ -3,12 +3,16 @@ title: "Borja Aguado"
 output:
   html_document:
     fig_width: 1
-
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
+```{=html}
 <!---From http://stackoverflow.com/questions/31753897/2-column-section-in-r-markdown:
 Put in your css file or directly in rmarkdown--->
-
+```
+```{=html}
 <style>
   .col2 {
     columns: 2 200px;         /* number of columns and width in pixels*/
@@ -39,38 +43,50 @@ figure {
 figurecaption{
   text-align: justify;
 }
+header {
+  display: block;
+}
+
 </style>
-
-
-<figure_side style="float: right">
-<b>Contact:</b>
-<br> &#x2709; E-mail : [borja.aguado@ub.edu](mailto:borja.aguado@ub.edu)
-<br> <img src="images/github.png" width="20px"> GitHub: [baguadoramirez](https://github.com/baguadoramirez)
-<br> <img src="images/OSF.png" width="20px"> OSF: [baguadoramirez](https://osf.io/tj628/)
-<br> <img src="images/linkedin.png" width="20px"> LikedIn: [Borja Aguado](https://www.linkedin.com/in/borja-a-606a59119)
-<!--<br> <img src="images/twitter.png" width="20px"> Twitter: [b_aguador](https://twitter.com/b_aguador)-->
-<br><img src="images/me.jpeg" width="270px">
+```
+<figure_side style="float: right"> 
+<b>Contact:</b> <br> ✉ E-mail :[borja.aguado\@ub.edu](mailto:borja.aguado@ub.edu) <br>
+<img src="images/scholar.png" width="20px"> Google Scholar: [Borja Aguado](https://scholar.google.es/citations?user=-_N8q0UAAAAJ&hl=en&oi=ao)  <br>
+<img src="images/github.png" width="20px"/> GitHub:[baguadoramirez](https://github.com/baguadoramirez) <br>
+<img src="images/OSF.png" width="20px"/> OSF: [baguadoramirez](https://osf.io/tj628/) <br>
+<img src="images/linkedin.png" width="20px"/> LikedIn: [Borja Aguado](https://www.linkedin.com/in/borja-a-606a59119)<br><img src="images/me.png" width="270px"/> 
 </figure_side>
 
-Hi! My name is Borja Aguado and this is my personal web page.  
+Welcome to my personal webpage! Here,I'll be sharing updates on my latest projects, insights on my interests, and all sorts of exciting content.
 
-In this website I intend to publish mainly the code of everything that I am doing on a daily basis. Whether it's research, teaching or my nerdy stuff. I love writting experiments using Python and Psychopy. Besides, I´m a data visualization nerd.  So, I will share code on how to make pretty and insightful plots.
+I'm also a data visualization nerd and I can't wait to share with you my insights on how to make stunning and informative plots. So, whether you're a fellow coding enthusiast or a data visualization aficionado, you'll find plenty of exciting content here.
 
-----
+I want to hear from you! So don't be shy, leave a comment or send me a message. Whether you have a question, a suggestion, or just want to say hello, I'm all ears.
 
-My first paper *"Perceived speed of motion in depth modulates misjudgements of approaching trajectories consistently with a slow prior"* along with my awesome supervisor [Joan López-Moliner](http://www.ub.edu/viscagroup/joan/) was recently publish. If you want to have a look at it, don´t hesitate to click [here](https://www.sciencedirect.com/science/article/pii/S0042698919300756). 
+Stay tuned for updates and feel free to leave a comment or send me a message. I'd love to hear from you!
 
-----
+<hr>
+<strong>Academic news</strong>
 
-<img src="images/new.gif" width="20px"> Due to the Coronavirus (SARS-CoV-2) crisis, I have created an application using the Shiny library to monitor the evolution of the data. It is a simple application in Spanish, mainly designed so that anyone without knowledge of how to interpret a graph can follow the evolution of the data. You can check it out at the following link. 
-
-[Click here!](https://baguadoramirez.shinyapps.io/covid/)
-
-Please, stay safe!
-
-----
-
-Thanks for reading and keep rocking! &#x1f525;
+<ul>
+  <li><b>Doctoral thesis: </b>Aguado, B. (2022). Estimating motion and time to contact in 3D environments: Priors matter. [Click Here to download](https://diposit.ub.edu/dspace/bitstream/2445/193301/1/BAR_PhD_THESIS.pdf)</li>
+  <li><b>Journal article: </b>Aguado, B., & López-Moliner, J. (2021). Gravity and Known Size Calibrate Visual Information to Time Parabolic Trajectories. Frontiers in Human Neuroscience, 15, 642025.[doi: 10.3389/fnhum.2021.642025](https://doi.org/10.3389/fnhum.2021.642025)</li>
+  <li><b>Journal article: </b>Aguado, B., & López-Moliner, J. (2021). Flexible viewing time when estimating time-to-contact in 3D parabolic trajectories. Journal of Vision, 21(4), 9-9. [doi: 10.1167/jov.21.4.9](https://doi.org/10.1167/jov.21.4.9)</li>
+  <li><b>Journal article: </b>Aguado, B, and López-Moliner, J. "Perceived speed of motion in depth modulates misjudgements of approaching trajectories consistently with a slow prior." Vision research 159 (2019): 1-9.[doi: 10.1016/j.visres.2019.03.009](https://doi.org/10.1016/j.visres.2019.03.009)</li>
+</ul>
 
 
-<img src="images/logo_reveal_black.png" width="600px">
+<hr>
+<strong>SARS-CoV-2</strong>
+
+<!-- <img src="images/new.gif" width="20px"/> -->
+Due to the ongoing Coronavirus (SARS-CoV-2) crisis, I've developed a Shiny library to track the progression of the data. The app is available in Spanish and is designed to be as user-friendly as possible, allowing anyone to easily interpret the data without needing any prior knowledge.
+
+If you're interested, you can check out the application at the following link [(Click here!)](https://baguadoramirez.shinyapps.io/covid/). It's a simple but effective tool that has proven to be incredibly helpful during these challenging times to friends and relatives. I hope it provides you with valuable insights into the evolution of the data, and feel free to share it with anyone who might find it useful. 
+
+Please, stay safe!\
+<hr>
+
+Thanks for reading and keep rocking! 🔥
+
+<img src="images/logo_reveal_black.png" width="600px"/>
