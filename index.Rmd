@@ -50,18 +50,19 @@ header {
 </style>
 ```
 <figure_side style="float: right"> 
-<b>Contact:</b> <br> ✉ E-mail :[borja.aguado\@ub.edu](mailto:borja.aguado@ub.edu) <br>
-<img src="images/scholar.png" width="20px"> Google Scholar: [Borja Aguado](https://scholar.google.es/citations?user=-_N8q0UAAAAJ&hl=en&oi=ao)  <br>
-<img src="images/github.png" width="20px"/> GitHub:[baguadoramirez](https://github.com/baguadoramirez) <br>
-<img src="images/OSF.png" width="20px"/> OSF: [baguadoramirez](https://osf.io/tj628/) <br>
-<img src="images/linkedin.png" width="20px"/> LikedIn: [Borja Aguado](https://www.linkedin.com/in/borja-a-606a59119)<br><img src="images/me.png" width="270px"/> 
+<b>Contact:</b> <br> ✉️ [E-mail](mailto:borja.aguado@ub.edu) 
+<img src="images/scholar.png" width="20px"> [Google Scholar](https://scholar.google.es/citations?user=-_N8q0UAAAAJ&hl=en&oi=ao) 
+<img src="images/github.png" width="20px"/> [GitHub](https://github.com/baguadoramirez) 
+<img src="images/OSF.png" width="20px"/>  [OSF](https://osf.io/tj628/) 
+<img src="images/linkedin.png" width="20px"/> [LinkedIn](https://www.linkedin.com/in/borja-a-606a59119) 
+<img src="images/me.png" width="270px"/> 
 </figure_side>
 
-Welcome to my personal webpage! Here,I'll be sharing updates on my latest projects, insights on my interests, and all sorts of exciting content.
+Welcome to my personal webpage! Here, I'll be sharing updates on my latest projects my interests, and all sorts of exciting content.
 
 I'm also a data visualization nerd and I can't wait to share with you my insights on how to make stunning and informative plots. So, whether you're a fellow coding enthusiast or a data visualization aficionado, you'll find plenty of exciting content here.
 
-I want to hear from you! So don't be shy, leave a comment or send me a message. Whether you have a question, a suggestion, or just want to say hello, I'm all ears.
+I want to hear from you! So don't be shy, send me an email: Whether you have a question, a suggestion, or just want to say hello, I'm all ears.
 
 Stay tuned for updates and feel free to leave a comment or send me a message. I'd love to hear from you!
 
@@ -69,6 +70,7 @@ Stay tuned for updates and feel free to leave a comment or send me a message. I'
 <strong>Academic news</strong>
 
 <ul>
+  <li><b>Preprint: </b>Aguado, B., & Lopez-Moliner, J. (2024). The predictive outfielder: a critical test across gravities. bioRxiv, 2024-01. [Click Here to preview](https://doi.org/10.1101/2024.01.08.574654)</li>
   <li><b>Doctoral thesis: </b>Aguado, B. (2022). Estimating motion and time to contact in 3D environments: Priors matter. [Click Here to download](https://diposit.ub.edu/dspace/bitstream/2445/193301/1/BAR_PhD_THESIS.pdf)</li>
   <li><b>Journal article: </b>Aguado, B., & López-Moliner, J. (2021). Gravity and Known Size Calibrate Visual Information to Time Parabolic Trajectories. Frontiers in Human Neuroscience, 15, 642025.[doi: 10.3389/fnhum.2021.642025](https://doi.org/10.3389/fnhum.2021.642025)</li>
   <li><b>Journal article: </b>Aguado, B., & López-Moliner, J. (2021). Flexible viewing time when estimating time-to-contact in 3D parabolic trajectories. Journal of Vision, 21(4), 9-9. [doi: 10.1167/jov.21.4.9](https://doi.org/10.1167/jov.21.4.9)</li>
@@ -77,7 +79,7 @@ Stay tuned for updates and feel free to leave a comment or send me a message. I'
 
 
 <hr>
-<strong>SARS-CoV-2</strong>
+<strong>SARS-CoV-2 (April, 2020)</strong>
 
 <!-- <img src="images/new.gif" width="20px"/> -->
 Due to the ongoing Coronavirus (SARS-CoV-2) crisis, I've developed a Shiny library to track the progression of the data. The app is available in Spanish and is designed to be as user-friendly as possible, allowing anyone to easily interpret the data without needing any prior knowledge.
@@ -89,4 +91,8 @@ Please, stay safe!\
 
 Thanks for reading and keep rocking! 🔥
 
-<img src="images/logo_reveal_black.png" width="600px"/>
+<hr>
+<img src="images/logo_UB_recorte.png" height="100px"/>
+<img src="images/logo_TUD.png" height="100px"/>
+<img src="images/logo_UVic.png" height="100"/>
+

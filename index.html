@@ -13,7 +13,7 @@
 
 <title>Borja Aguado</title>
 
-<script src="site_libs/header-attrs-2.14/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.25/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/paper.min.css" rel="stylesheet" />
@@ -146,11 +146,15 @@ $(document).ready(function () {
     href = "index.html";
   var menuAnchor = $('a[href="' + href + '"]');
 
-  // mark it active
-  menuAnchor.tab('show');
-
-  // if it's got a parent navbar menu mark it active as well
-  menuAnchor.closest('li.dropdown').addClass('active');
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
 
   // Navbar adjustments
   var navHeight = $(".navbar").first().height() + 15;
@@ -179,8 +183,8 @@ $(document).ready(function () {
   border-radius: 4px;
 }
 
-.tabset-dropdown > .nav-tabs > li.active:before {
-  content: "";
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
   font-family: 'Glyphicons Halflings';
   display: inline-block;
   padding: 10px;
@@ -188,16 +192,9 @@ $(document).ready(function () {
 }
 
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
-  content: "&#xe258;";
-  border: none;
-}
-
-.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
-  content: "";
+  content: "\e258";
   font-family: 'Glyphicons Halflings';
-  display: inline-block;
-  padding: 10px;
-  border-right: 1px solid #ddd;
+  border: none;
 }
 
 .tabset-dropdown > .nav-tabs > li.active {
@@ -310,33 +307,37 @@ header {
 }
 
 </style>
-<p><figure_side style="float: right"> <b>Contact:</b> <br> ✉ E-mail :<a
-href="mailto:borja.aguado@ub.edu">borja.aguado@ub.edu</a> <br>
-<img src="images/scholar.png" width="20px"> Google Scholar: <a
-href="https://scholar.google.es/citations?user=-_N8q0UAAAAJ&amp;hl=en&amp;oi=ao">Borja
-Aguado</a> <br> <img src="images/github.png" width="20px"/> GitHub:<a
-href="https://github.com/baguadoramirez">baguadoramirez</a> <br>
-<img src="images/OSF.png" width="20px"/> OSF: <a
-href="https://osf.io/tj628/">baguadoramirez</a> <br>
-<img src="images/linkedin.png" width="20px"/> LikedIn: <a
-href="https://www.linkedin.com/in/borja-a-606a59119">Borja
-Aguado</a><br><img src="images/me.png" width="270px"/>
-</figure_side></p>
-<p>Welcome to my personal webpage! Here,I’ll be sharing updates on my
-latest projects, insights on my interests, and all sorts of exciting
-content.</p>
+<p><figure_side style="float: right"> <b>Contact:</b> <br> ✉️ <a
+href="mailto:borja.aguado@ub.edu">E-mail</a>
+<img src="images/scholar.png" width="20px"> <a
+href="https://scholar.google.es/citations?user=-_N8q0UAAAAJ&amp;hl=en&amp;oi=ao">Google
+Scholar</a> <img src="images/github.png" width="20px"/> <a
+href="https://github.com/baguadoramirez">GitHub</a>
+<img src="images/OSF.png" width="20px"/> <a
+href="https://osf.io/tj628/">OSF</a>
+<img src="images/linkedin.png" width="20px"/> <a
+href="https://www.linkedin.com/in/borja-a-606a59119">LinkedIn</a>
+<img src="images/me.png" width="270px"/> </figure_side></p>
+<p>Welcome to my personal webpage! Here, I’ll be sharing updates on my
+latest projects my interests, and all sorts of exciting content.</p>
 <p>I’m also a data visualization nerd and I can’t wait to share with you
 my insights on how to make stunning and informative plots. So, whether
 you’re a fellow coding enthusiast or a data visualization aficionado,
 you’ll find plenty of exciting content here.</p>
-<p>I want to hear from you! So don’t be shy, leave a comment or send me
-a message. Whether you have a question, a suggestion, or just want to
-say hello, I’m all ears.</p>
+<p>I want to hear from you! So don’t be shy, send me an email: Whether
+you have a question, a suggestion, or just want to say hello, I’m all
+ears.</p>
 <p>Stay tuned for updates and feel free to leave a comment or send me a
 message. I’d love to hear from you!</p>
 <hr>
 <p><strong>Academic news</strong></p>
 <ul>
+<li>
+<b>Preprint: </b>Aguado, B., &amp; Lopez-Moliner, J. (2024). The
+predictive outfielder: a critical test across gravities. bioRxiv,
+2024-01. <a href="https://doi.org/10.1101/2024.01.08.574654">Click Here
+to preview</a>
+</li>
 <li>
 <b>Doctoral thesis: </b>Aguado, B. (2022). Estimating motion and time to
 contact in 3D environments: Priors matter. <a
@@ -365,7 +366,7 @@ trajectories consistently with a slow prior.” Vision research 159
 </li>
 </ul>
 <hr>
-<p><strong>SARS-CoV-2</strong></p>
+<p><strong>SARS-CoV-2 (April, 2020)</strong></p>
 <!-- <img src="images/new.gif" width="20px"/> -->
 <p>Due to the ongoing Coronavirus (SARS-CoV-2) crisis, I’ve developed a
 Shiny library to track the progression of the data. The app is available
@@ -383,7 +384,10 @@ Please, stay safe!<br />
 
 <hr>
 <p>Thanks for reading and keep rocking! 🔥</p>
-<p><img src="images/logo_reveal_black.png" width="600px"/></p>
+<hr>
+<p><img src="images/logo_UB_recorte.png" height="100px"/>
+<img src="images/logo_TUD.png" height="100px"/>
+<img src="images/logo_UVic.png" height="100"/></p>
 
 <html>
 <footer role="contentinfo" id="site-footer">

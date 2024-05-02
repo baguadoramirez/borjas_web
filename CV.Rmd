@@ -49,7 +49,7 @@ From Toledo, living *who knows where...*
 </div>
 
 <div class="column-right">
-<img src="images/id.jpg" width="200px">
+<img src="images/id.png" width="200px">
 </div>
 
 <style>
@@ -76,7 +76,9 @@ PhD Candidate under the trainee of [Joan López-Moliner](http://www.ub.edu/visca
 
   - Thesis name: <u> Estimating motion and time to contact in 3D environments: Priors matter. </u>
   
-Postdoctoral researcher at Technische Universitëit Darmstadt (2022-2025)
+Postdoctoral researcher at Technische Universitëit Darmstadt (May 2022- Agugust 2023)
+
+Lecturer at Universitat de Vic - Universitat Central de Catalunya (2023-Present)
 
 ## Teaching
 
@@ -88,8 +90,15 @@ Postdoctoral researcher at Technische Universitëit Darmstadt (2022-2025)
 
 - *Experimental Practicum* of the Cognitive Sciences Bachelor's degree program at the Technische Universitëit Darmstadt.
 
+- *Psychobiology fundamentals* of the Psychology Bachelor's degree program at the Universitat de Vic - Universitat Central de Catalunya.
+
+- *Perception Atention & Memory* of the Psychology Bachelor's degree program at the Universitat de Vic - Universitat Central de Catalunya.
+
 ## Academic Curriculum
 ### Publications
+
+- Preprint: </b>Aguado, B., & Lopez-Moliner, J. (2024). The predictive outfielder: a critical test across gravities. bioRxiv, 2024-01. [Click Here to preview](https://doi.org/10.1101/2024.01.08.574654)
+
 
 - Estimating motion and time to contact in 3D environments: Priors matter. [Click Here to download](https://diposit.ub.edu/dspace/bitstream/2445/193301/1/BAR_PhD_THESIS.pdf)
 
@@ -119,4 +128,7 @@ Postdoctoral researcher at Technische Universitëit Darmstadt (2022-2025)
 - Beca de Colaboración UB (FPSC2017.3)
 
 - 2018FI_B00090 (April 2018 - September 2018) fellowship from Agència de Gestió d'Ajuts Universitaris i de Recerca. 
+
+
+<hr>
 
