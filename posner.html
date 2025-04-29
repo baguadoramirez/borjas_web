@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Experimento de Posner - Táctil</title>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      font-family: sans-serif;
+      margin: 0;
+      overflow: hidden;
+    }
+    #fixation, #cue, #target-left, #target-right, #instructions {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 80px;
+      text-align: center;
+    }
+    #fixation {
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    #cue {
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    #target-left {
+      left: 15%;
+    }
+    #target-right {
+      right: 15%;
+    }
+    #target-left, #target-right {
+      top: 50%;
+      transform: translateY(-50%);
+      position: absolute;
+      font-size: 80px;
+    }
+    #instructions {
+      width: 80%;
+      left: 10%;
+      font-size: 28px;
+      line-height: 1.6;
+    }
+
+    /* Botones táctiles */
+    #response-buttons {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 20%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .button-area {
+      width: 40%;
+      height: 100%;
+      background-color: #8B0000;
+      opacity: 0.8;
+      margin: 5%;
+      border-radius: 10px;
+    }
+
+    .button-area:active {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="instructions">
+    <h1>Bienvenido/a al experimento</h1>
+    <p>Verás una cruz (+) en el centro de la pantalla.</p>
+    <p>Después, aparecerá una flecha que puede indicar hacia dónde saldrá el estímulo (●).</p>
+    <p>Tu tarea es responder lo más rápido posible:</p>
+    <ul>
+      <li>Pulsa la tecla ← o TOCA el botón izquierdo si el ● aparece a la izquierda.</li>
+      <li>Pulsa la tecla → o TOCA el botón derecho si el ● aparece a la derecha.</li>
+    </ul>
+    <p>Presiona cualquier tecla o toca la pantalla para comenzar.</p>
+  </div>
+
+  <div id="fixation" style="display:none;">+</div>
+  <div id="cue" style="display:none;"></div>
+  <div id="target-left" style="display:none;">●</div>
+  <div id="target-right" style="display:none;">●</div>
+
+  <!-- Botones de respuesta táctil -->
+  <div id="response-buttons" style="display:none;">
+    <div id="left-button" class="button-area"></div>
+    <div id="right-button" class="button-area"></div>
+  </div>
+
+  <script>
+    const fixation = document.getElementById("fixation");
+    const cue = document.getElementById("cue");
+    const leftTarget = document.getElementById("target-left");
+    const rightTarget = document.getElementById("target-right");
+    const instructions = document.getElementById("instructions");
+    const responseButtons = document.getElementById("response-buttons");
+    const leftButton = document.getElementById("left-button");
+    const rightButton = document.getElementById("right-button");
+
+    const numTrials = 90;
+    const proportionValid = 0.7;
+    const proportionInvalid = 0.15;
+    const proportionNeutral = 0.15;
+
+    const fixationTime = 500;
+    const cueTime = 100;
+    const soa = 100;
+    const maxResponseTime = 1500;
+
+    let trials = [];
+
+    for (let i = 0; i < numTrials; i++) {
+      let r = Math.random();
+      let condition = r < proportionValid ? "valid" : (r < proportionValid + proportionInvalid ? "invalid" : "neutral");
+      let cueSide = Math.random() < 0.5 ? "left" : "right";
+      let targetSide;
+
+      if (condition === "valid") {
+        targetSide = cueSide;
+      } else if (condition === "invalid") {
+        targetSide = cueSide === "left" ? "right" : "left";
+      } else {
+        cueSide = "neutral";
+        targetSide = Math.random() < 0.5 ? "left" : "right";
+      }
+
+      trials.push({ condition, cueSide, targetSide });
+    }
+
+    trials = trials.sort(() => Math.random() - 0.5);
+
+    let trialIndex = -1;
+    let startTime = 0;
+    let data = [];
+
+    function nextTrial() {
+      trialIndex++;
+      if (trialIndex >= trials.length) {
+        showResults();
+        return;
+      }
+
+      fixation.style.display = "block";
+      cue.style.display = "none";
+      leftTarget.style.display = "none";
+      rightTarget.style.display = "none";
+      responseButtons.style.display = "none";
+
+      setTimeout(() => showCue(trials[trialIndex]), fixationTime);
+    }
+
+    function showCue(trial) {
+      fixation.style.display = "none";
+      cue.style.display = "block";
+
+      if (trial.cueSide === "left") {
+        cue.innerHTML = "⬅︎";
+      } else if (trial.cueSide === "right") {
+        cue.innerHTML = "➡︎";
+      } else {
+        cue.innerHTML = "+";
+      }
+
+      setTimeout(() => {
+        cue.style.display = "none";
+        setTimeout(() => showTarget(trial), soa);
+      }, cueTime);
+    }
+
+    function showTarget(trial) {
+      if (trial.targetSide === "left") {
+        leftTarget.style.display = "block";
+      } else {
+        rightTarget.style.display = "block";
+      }
+
+      responseButtons.style.display = "flex";
+      startTime = performance.now();
+
+      let timeout = setTimeout(() => {
+        recordResponse(null);
+      }, maxResponseTime);
+
+      function handleInput(response) {
+        clearTimeout(timeout);
+        recordResponse(response);
+      }
+
+      window.onkeydown = function(e) {
+        if (e.key === "ArrowLeft") handleInput("left");
+        if (e.key === "ArrowRight") handleInput("right");
+      };
+
+      leftButton.onclick = () => handleInput("left");
+      rightButton.onclick = () => handleInput("right");
+      leftButton.ontouchstart = () => handleInput("left");
+      rightButton.ontouchstart = () => handleInput("right");
+    }
+
+    function recordResponse(response) {
+      window.onkeydown = null;
+      const trial = trials[trialIndex];
+      const rt = performance.now() - startTime;
+      const correct =
+        (trial.targetSide === "left" && response === "left") ||
+        (trial.targetSide === "right" && response === "right");
+
+      data.push({
+        condition: trial.condition,
+        rt: response ? rt : null,
+        correct: response ? correct : false
+      });
+
+      leftTarget.style.display = "none";
+      rightTarget.style.display = "none";
+      responseButtons.style.display = "none";
+
+      setTimeout(nextTrial, 500);
+    }
+
+    function showResults() {
+      const conditions = ["valid", "invalid", "neutral"];
+      let summary = {};
+      for (let cond of conditions) {
+        const condData = data.filter(d => d.condition === cond && d.correct && d.rt !== null);
+        const avg = condData.reduce((sum, d) => sum + d.rt, 0) / condData.length;
+        summary[cond] = isNaN(avg) ? "N/A" : avg.toFixed(1);
+      }
+
+      fixation.innerHTML = `
+        <h2>Resultados:</h2>
+        <p>Válida: ${summary.valid} ms</p>
+        <p>Inválida: ${summary.invalid} ms</p>
+        <p>Neutral: ${summary.neutral} ms</p>
+        <p>Recarga la página para repetir.</p>
+      `;
+      fixation.style.display = "block";
+    }
+
+    function startExperiment() {
+      instructions.style.display = "none";
+      fixation.innerHTML = "+";
+      fixation.style.display = "block";
+      setTimeout(nextTrial, 1000);
+    }
+
+    // Iniciar con clic o tecla
+    window.addEventListener("keydown", startExperiment, { once: true });
+    window.addEventListener("touchstart", startExperiment, { once: true });
+  </script>
+</body>
+</html>
