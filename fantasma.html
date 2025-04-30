@@ -58,6 +58,8 @@
     let blockErrors = [];
     let waitingForHold = true;
     let holdStartTime = null;
+    let lastTouch = null;
+    let isTouchActive = false;
 
     const tol = 50;
 
@@ -67,23 +69,31 @@
     mouse.y = y - rect.top;
     }
 
-    // Soporte para ratón
+    // Soporte ratón
     canvas.addEventListener('mousemove', e => {
     updateMousePosition(e.clientX, e.clientY);
     });
 
-    // Soporte para pantallas táctiles
-    canvas.addEventListener('touchmove', e => {
+    // Soporte táctil continuo
+    canvas.addEventListener('touchstart', e => {
+    isTouchActive = true;
     if (e.touches.length > 0) {
-        updateMousePosition(e.touches[0].clientX, e.touches[0].clientY);
+        lastTouch = e.touches[0];
+        updateMousePosition(lastTouch.clientX, lastTouch.clientY);
     }
     }, { passive: false });
 
-    canvas.addEventListener('touchstart', e => {
+    canvas.addEventListener('touchmove', e => {
     if (e.touches.length > 0) {
-        updateMousePosition(e.touches[0].clientX, e.touches[0].clientY);
+        lastTouch = e.touches[0];
+        updateMousePosition(lastTouch.clientX, lastTouch.clientY);
     }
     }, { passive: false });
+
+    canvas.addEventListener('touchend', e => {
+    isTouchActive = false;
+    });
+
 
 
     startButton.onclick = () => {
@@ -172,6 +182,10 @@
 
     function update(t) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (isTouchActive && lastTouch) {
+        updateMousePosition(lastTouch.clientX, lastTouch.clientY);
+        }
+
         if (!lastTimestamp) lastTimestamp = t;
         const deltaTime = (t - lastTimestamp) / 1000; // tiempo entre frames en segundos
         lastTimestamp = t;
