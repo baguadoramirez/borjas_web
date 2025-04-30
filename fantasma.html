@@ -4,9 +4,18 @@
   <meta charset="UTF-8">
   <title>Seguimiento del Fantasma</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
-    canvas { display: block; margin: 0; padding: 0; width: 100vw; height: 100vh;}
-    
+    body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; 
+        -ms-user-select: none;     /* IE 10+ */
+  user-select: none;         /* Estándar */
+  touch-action: none;        /* Previene zoom y scroll táctil */}
+    canvas { display: block; margin: 0; padding: 0; width: 100vw; height: 100vh;  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none;     /* IE 10+ */
+  user-select: none;         /* Estándar */
+  touch-action: none;        /* Previene zoom y scroll táctil */}
+  html, body {
+  overscroll-behavior: none;
+  touch-action: none;
+}
     #ui {
   position: absolute;
   top: 10px;
@@ -91,6 +100,12 @@
 
   <script>
     const canvas = document.getElementById('game');
+    // Previene la selección o zoom en dispositivos móviles (excepto inputs del formulario)
+document.addEventListener('touchstart', e => {
+  if (!['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(e.target.tagName)) {
+    e.preventDefault();
+  }
+}, { passive: false });
     const ctx = canvas.getContext('2d');
     const heatmapCanvas = document.getElementById('finalCanvas');
     const heatCtx = heatmapCanvas.getContext('2d');
