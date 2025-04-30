@@ -4,11 +4,39 @@
   <meta charset="UTF-8">
   <title>Seguimiento del Fantasma</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #eee; font-family: sans-serif; }
-    canvas { display: block; margin: 0 auto; background: #ddd; }
-    #ui { position: absolute; top: 10px; left: 10px; z-index: 2; color: black; background: white; padding: 10px; border-radius: 10px; }
+    body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+    canvas { display: block; margin: 0; padding: 0; width: 100vw; height: 100vh;}
+    
+    #ui {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  color: black;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  font-size: 20px;
+  max-width: 90vw;
+}
+#ui input, #ui select {
+  font-size: 20px;
+}
+#start-button {
+  font-size: 20px;
+  padding: 10px 16px;
+}
+#feedback {
+  color: white;
+  background: rgba(0,0,0,0.6);
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+
+    
     #heatmap { display: none; margin: 100px auto; }
-    #start-button { font-size: 18px; padding: 8px 12px; }
     #download { margin-top: 10px; display: none; }
     #beta-label {
     position: fixed;
@@ -39,18 +67,32 @@
       </label><br><br>
       <button id="start-button">Comenzar experimento</button>
     </div>
+      
+      <div id="instructions" style="display:none; margin-top: 20px;">
+        <h2>Instrucciones</h2>
+        <p>Tu objetivo es <strong>seguir al fantasma</strong> con el ratón o el dedo.</p>
+        <p>Cuando estés sobre él, se volverá rojo y sus ojos cambiarán.</p>
+        <p>Para comenzar cada bloque, debes mantener el cursor sobre el fantasma durante <strong>1 segundo seguido</strong>.</p>
+        <p>Haz lo mejor que puedas. ¡Buena suerte!</p>
+        <button id="start-experiment-button">Comenzar experimento</button>
+      </div>
+      
     <div id="feedback" style="display:none;"></div>
     <a id="download">Descargar mapa de calor</a>
   </div>
 
-  <canvas id="game" width="800" height="600"></canvas>
-  <canvas id="heatmap" width="800" height="800"></canvas>
+  
+
+  <canvas id="game"></canvas>
+  <canvas id="finalCanvas" width="1000" height="600" style="display:none; margin: 40px auto; background: white;"></canvas>
+  <a id="download" style="display:none;">Descargar informe</a>
+  
   <div id="beta-label">BETA</div>
 
   <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
-    const heatmapCanvas = document.getElementById('heatmap');
+    const heatmapCanvas = document.getElementById('finalCanvas');
     const heatCtx = heatmapCanvas.getContext('2d');
 
     const pidInput = document.getElementById('pid');
@@ -60,10 +102,10 @@
     const feedbackDiv = document.getElementById('feedback');
     const downloadLink = document.getElementById('download');
 
-    const ghost = { x: 400, y: 300, angle: 0, radius: 40 };
+    const ghost = { x: 400, y: 300, angle: 0, radius: 100 };
     const mouse = { x: 0, y: 0 };
-    const blockDuration = 1000;
-    const blocks = 3;
+    const blockDuration = 30000;
+    const blocks = 4;
     let currentBlock = 0;
     let running = false;
     let blockStart = 0;
@@ -111,13 +153,19 @@
 
 
     startButton.onclick = () => {
-      if (!pidInput.value || !edadInput.value) {
-        alert("Rellena todos los campos.");
+    if (!pidInput.value || !edadInput.value) {
+        alert("Por favor, rellena todos los campos.");
         return;
-      }
-      document.getElementById('form').style.display = 'none';
-      startExperiment();
+    }
+    document.getElementById('form').style.display = 'none';
+    document.getElementById('instructions').style.display = 'block';
     };
+
+    document.getElementById('start-experiment-button').onclick = () => {
+    document.getElementById('instructions').style.display = 'none';
+        startExperiment();
+    };
+
 
     function startExperiment() {
       currentBlock = 0;
@@ -184,10 +232,13 @@
       return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
     }
 
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const maxDistX = canvas.width * 0.35;
-    const maxDistY = canvas.height * 0.35;
+    let centerX = 0;
+    let centerY = 0;
+    let maxDistX = 0;
+    let maxDistY = 0;
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
     let returnFrames = 0;
     let ghostAngle = Math.random() * 2 * Math.PI;
@@ -212,6 +263,7 @@
         const maxDistX = canvas.width * 0.35;
         const maxDistY = canvas.height * 0.35;
 
+        // Usa centerX, centerY, maxDistX, maxDistY calculadas dinámicamente
         const dx = ghost.x - centerX;
         const dy = ghost.y - centerY;
 
@@ -245,7 +297,8 @@
                 holdStartTime = null;
             }
 
-            ctx.fillStyle = "black";
+            ctx.fillStyle = "white";
+            ctx.font = "20px sans-serif";
             ctx.fillText("Mantén el cursor sobre el fantasma durante 1 segundo para comenzar", 100, 40);
 
             requestAnimationFrame(update);
@@ -287,8 +340,8 @@
     }
 
     function showBlockFeedback() {
-      feedbackDiv.innerHTML = `Bloque ${currentBlock + 1} finalizado. Puntos: ${score}.<br>Error medio: ${blockErrors[currentBlock]} px.`;
-      feedbackDiv.style.display = 'block';
+        feedbackDiv.innerHTML = `Bloque ${currentBlock + 1} finalizado. <br>Error medio: ${blockErrors[currentBlock]} px.`;
+        feedbackDiv.style.display = 'block';
       setTimeout(() => {
         feedbackDiv.style.display = 'none';
         currentBlock++;
@@ -300,13 +353,118 @@
         }
       }, 3000);
     }
+    function drawFinalReportWithHeatmap() {
+  const canvas = document.getElementById('finalCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // Datos del participante
+  const participantName = pidInput.value || "Anónimo";
+  const dateStr = new Date().toLocaleDateString();
+  const avgErrors = blockErrors.map((e, i) => `Bloque ${i + 1}: ${e} px`);
+
+  // Reset y fondo blanco
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // --- Parte izquierda: Datos ---
+  ctx.fillStyle = "black";
+  ctx.font = "22px sans-serif";
+  ctx.fillText(`Participante: ${participantName}`, 40, 60);
+  ctx.fillText(`Fecha: ${dateStr}`, 40, 100);
+  ctx.fillText(`Errores medios:`, 40, 150);
+  ctx.font = "20px monospace";
+  avgErrors.forEach((e, i) => {
+    ctx.fillText(e, 40, 190 + i * 30);
+  });
+
+  // --- Parte derecha: Heatmap ---
+  const heatWidth = 500;
+  const heatHeight = 500;
+  const heatX = 450;
+  const heatY = 50;
+  const bins = 100;
+  const margin = 40;
+  const scale = 400;
+  const binSize = scale / bins;
+
+  const data = errors.map(e => ({
+    x: Math.max(-200, Math.min(200, e.x)),
+    y: Math.max(-200, Math.min(200, e.y))
+  }));
+
+  const counts = Array.from({ length: bins }, () => Array(bins).fill(0));
+  data.forEach(({ x, y }) => {
+    const i = Math.floor((x + 200) / binSize);
+    const j = Math.floor((y + 200) / binSize);
+    if (i >= 0 && i < bins && j >= 0 && j < bins) counts[j][i]++;
+  });
+  const maxCount = Math.max(...counts.flat());
+
+  for (let i = 0; i < bins; i++) {
+    for (let j = 0; j < bins; j++) {
+      const alpha = counts[j][i] / maxCount;
+      ctx.fillStyle = `rgba(255,0,0,${alpha})`;
+      ctx.fillRect(
+        heatX + margin + i * ((heatWidth - 2 * margin) / bins),
+        heatY + margin + j * ((heatHeight - 2 * margin) / bins),
+        (heatWidth - 2 * margin) / bins,
+        (heatHeight - 2 * margin) / bins
+      );
+    }
+  }
+
+  // Ejes
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 1;
+  const cx = heatX + heatWidth / 2;
+  const cy = heatY + heatHeight / 2;
+
+  ctx.beginPath();
+  ctx.moveTo(heatX + margin, cy);
+  ctx.lineTo(heatX + heatWidth - margin, cy);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx, heatY + margin);
+  ctx.lineTo(cx, heatY + heatHeight - margin);
+  ctx.stroke();
+
+  // Etiquetas de ejes
+  ctx.fillStyle = 'black';
+  ctx.font = '16px sans-serif';
+  ctx.fillText("Error X (px)", cx - 40, heatY + heatHeight - 10);
+  ctx.save();
+  ctx.translate(heatX + 15, cy + 40);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("Error Y (px)", 0, 0);
+  ctx.restore();
+
+  canvas.style.display = 'block';
+
+  // Habilita descarga
+  const download = document.getElementById('download');
+  download.href = canvas.toDataURL("image/png");
+  download.download = `informe_${participantName}_${dateStr}.png`;
+  download.textContent = "Descargar informe final";
+  download.style.display = 'block';
+}
+
 
     function showFinal() {
       feedbackDiv.innerHTML = `<h3>¡Gracias por participar!</h3>
         <p>Error medio por bloque:<br>${blockErrors.map((e, i) => `Bloque ${i + 1}: ${e} px`).join('<br>')}</p>`;
       feedbackDiv.style.display = 'block';
 
-      drawHeatmap();
+      drawFinalReportWithHeatmap();
+    }
+    function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    // Recalcular límites del movimiento
+    centerX = canvas.width / 2;
+    centerY = canvas.height / 2;
+    maxDistX = canvas.width * 0.35;
+    maxDistY = canvas.height * 0.35;
     }
 
     function drawHeatmap() {
@@ -378,6 +536,7 @@
   // Marcas de escala en X
   for (let x = -200; x <= 200; x += 100) {
     const px = ((x + 200) / scale) * (width - 2 * margin) + margin;
+    heatCtx.fillStyle = 'black';
     heatCtx.fillText(x.toString(), px - 10, height / 2 + 20);
     heatCtx.beginPath();
     heatCtx.moveTo(px, height / 2 - 5);
@@ -390,6 +549,7 @@
     const py = ((y + 200) / scale) * (height - 2 * margin) + margin;
     if(y != 0){
         heatCtx.fillText((-y).toString(), width / 2 + 15, py + 20);
+        heatCtx.fillStyle = 'black';
         heatCtx.beginPath();
         heatCtx.moveTo(width / 2 - 5, py);
         heatCtx.lineTo(width / 2 + 5, py);
