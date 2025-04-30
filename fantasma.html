@@ -10,6 +10,19 @@
     #heatmap { display: none; margin: 100px auto; }
     #start-button { font-size: 18px; padding: 8px 12px; }
     #download { margin-top: 10px; display: none; }
+    #beta-label {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background: red;
+    color: white;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    z-index: 1000;
+    opacity: 0.8;
+    }
   </style>
 </head>
 <body>
@@ -32,6 +45,7 @@
 
   <canvas id="game" width="800" height="600"></canvas>
   <canvas id="heatmap" width="800" height="800"></canvas>
+  <div id="beta-label">BETA</div>
 
   <script>
     const canvas = document.getElementById('game');
