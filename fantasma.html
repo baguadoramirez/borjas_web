@@ -61,11 +61,30 @@
 
     const tol = 50;
 
+    function updateMousePosition(x, y) {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = x - rect.left;
+    mouse.y = y - rect.top;
+    }
+
+    // Soporte para ratón
     canvas.addEventListener('mousemove', e => {
-      const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
+    updateMousePosition(e.clientX, e.clientY);
     });
+
+    // Soporte para pantallas táctiles
+    canvas.addEventListener('touchmove', e => {
+    if (e.touches.length > 0) {
+        updateMousePosition(e.touches[0].clientX, e.touches[0].clientY);
+    }
+    }, { passive: false });
+
+    canvas.addEventListener('touchstart', e => {
+    if (e.touches.length > 0) {
+        updateMousePosition(e.touches[0].clientX, e.touches[0].clientY);
+    }
+    }, { passive: false });
+
 
     startButton.onclick = () => {
       if (!pidInput.value || !edadInput.value) {
