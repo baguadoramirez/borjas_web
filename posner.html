@@ -71,8 +71,14 @@
   </style>
 </head>
 <body>
-
-  <div id="instructions">
+  <div id="participant-form">
+    <h1>Introduce tu nombre:</h1>
+    <input type="text" id="participant-name" placeholder="Tu nombre" style="font-size:24px;">
+    <br><br>
+    <button onclick="showInstructions()" style="font-size:24px;">Continuar</button>
+  </div>
+  
+  <div id="instructions" style="display:none;">
     <h1>Bienvenido/a al experimento</h1>
     <p>Verás una cruz (+) en el centro de la pantalla.</p>
     <p>Después, aparecerá una flecha que puede indicar hacia dónde saldrá el estímulo (●).</p>
@@ -83,6 +89,10 @@
     </ul>
     <p>Presiona cualquier tecla o toca la pantalla para comenzar.</p>
   </div>
+  
+  <canvas id="resultsCanvas" width="600" height="450" style="display:none;"></canvas>
+  <a id="downloadLink" style="display:none;">Descargar imagen de resultados</a>
+  
 
   <div id="fixation" style="display:none;">+</div>
   <div id="cue" style="display:none;"></div>
@@ -105,7 +115,7 @@
     const leftButton = document.getElementById("left-button");
     const rightButton = document.getElementById("right-button");
 
-    const numTrials = 90;
+    const numTrials = 20;
     const proportionValid = 0.7;
     const proportionInvalid = 0.15;
     const proportionNeutral = 0.15;
@@ -227,30 +237,89 @@
     }
 
     function showResults() {
-      const conditions = ["valid", "invalid", "neutral"];
-      let summary = {};
-      for (let cond of conditions) {
-        const condData = data.filter(d => d.condition === cond && d.correct && d.rt !== null);
-        const avg = condData.reduce((sum, d) => sum + d.rt, 0) / condData.length;
-        summary[cond] = isNaN(avg) ? "N/A" : avg.toFixed(1);
-      }
+  const conditions = ["valid", "invalid", "neutral"];
+  let summary = {};
+  let counts = {};
 
-      fixation.innerHTML = `
-        <h2>Resultados:</h2>
-        <p>Válida: ${summary.valid} ms</p>
-        <p>Inválida: ${summary.invalid} ms</p>
-        <p>Neutral: ${summary.neutral} ms</p>
-        <p>Recarga la página para repetir.</p>
-      `;
-      fixation.style.display = "block";
-    }
+  for (let cond of conditions) {
+    const condData = data.filter(d => d.condition === cond && d.rt !== null);
+    const correctData = condData.filter(d => d.correct);
+    const avg = correctData.reduce((sum, d) => sum + d.rt, 0) / correctData.length;
 
-    function startExperiment() {
-      instructions.style.display = "none";
-      fixation.innerHTML = "+";
-      fixation.style.display = "block";
-      setTimeout(nextTrial, 1000);
-    }
+    summary[cond] = isNaN(avg) ? "N/A" : avg.toFixed(1);
+    counts[cond] = {
+      total: condData.length,
+      correct: correctData.length
+    };
+  }
+
+  const participant = document.getElementById("participant-name").value || "Anónimo";
+  const date = new Date().toLocaleDateString();
+
+  const canvas = document.getElementById("resultsCanvas");
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "black";
+  ctx.font = "20px sans-serif";
+  ctx.fillText(`Participante: ${participant}`, 20, 30);
+  ctx.fillText(`Fecha: ${date}`, 20, 60);
+
+  let y = 100;
+  for (let cond of conditions) {
+    ctx.fillText(`${cond.charAt(0).toUpperCase() + cond.slice(1)}:`, 20, y);
+    ctx.fillText(`RT medio: ${summary[cond]} ms`, 160, y);
+    ctx.fillText(`Aciertos: ${counts[cond].correct} / ${counts[cond].total}`, 360, y);
+    y += 40;
+  }
+
+  ctx.fillText("¡Gracias por participar!", 20, y + 30);
+
+  const downloadLink = document.getElementById("downloadLink");
+  downloadLink.href = canvas.toDataURL("image/png");
+  downloadLink.download = `resultados_${participant}_${date}.png`;
+  downloadLink.textContent = "Descargar imagen de resultados";
+  downloadLink.style.display = "block";
+  downloadLink.style.fontSize = "20px";
+  downloadLink.style.marginTop = "20px";
+
+  fixation.innerHTML = `
+    <h2>Resultados:</h2>
+    <p>Válida: ${summary.valid} ms — Aciertos: ${counts.valid.correct/counts.valid.total*100} %</p>
+    <p>Inválida: ${summary.invalid} ms — Aciertos: ${counts.invalid.correct / counts.invalid.total*100} %</p>
+    <p>Neutral: ${summary.neutral} ms — Aciertos: ${counts.neutral.correct / counts.neutral.total*100} %</p>
+    <p>Descarga la imagen con los resultados debajo.</p>
+  `;
+  fixation.style.display = "block";
+}
+
+function showInstructions() {
+  const name = document.getElementById("participant-name").value.trim();
+  if (!name) {
+    alert("Por favor, introduce tu nombre.");
+    return;
+  }
+  document.getElementById("participant-form").style.display = "none";
+  document.getElementById("instructions").style.display = "block";
+
+  window.addEventListener("keydown", startExperiment, { once: true });
+  window.addEventListener("touchstart", startExperiment, { once: true });
+}
+function startExperiment() {
+  const name = document.getElementById("participant-name").value;
+  if (!name.trim()) {
+    alert("Por favor, introduce tu nombre para comenzar.");
+    return;
+  }
+
+  document.getElementById("participant-form").style.display = "none";
+  document.getElementById("instructions").style.display = "none";
+  fixation.innerHTML = "+";
+  fixation.style.display = "block";
+  setTimeout(nextTrial, 1000);
+}
+
 
     // Iniciar con clic o tecla
     window.addEventListener("keydown", startExperiment, { once: true });

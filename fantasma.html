@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Seguimiento del Fantasma</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #eee; font-family: sans-serif; }
+    canvas { display: block; margin: 0 auto; background: #ddd; }
+    #ui { position: absolute; top: 10px; left: 10px; z-index: 2; color: black; background: white; padding: 10px; border-radius: 10px; }
+    #heatmap { display: none; margin: 100px auto; }
+    #start-button { font-size: 18px; padding: 8px 12px; }
+    #download { margin-top: 10px; display: none; }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div id="form">
+      <label>ID Participante: <input type="text" id="pid" /></label><br>
+      <label>Edad: <input type="number" id="edad" /></label><br>
+      <label>Sexo:
+        <select id="sexo">
+          <option>Masculino</option>
+          <option>Femenino</option>
+          <option>Otro</option>
+        </select>
+      </label><br><br>
+      <button id="start-button">Comenzar experimento</button>
+    </div>
+    <div id="feedback" style="display:none;"></div>
+    <a id="download">Descargar mapa de calor</a>
+  </div>
+
+  <canvas id="game" width="800" height="600"></canvas>
+  <canvas id="heatmap" width="800" height="800"></canvas>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const heatmapCanvas = document.getElementById('heatmap');
+    const heatCtx = heatmapCanvas.getContext('2d');
+
+    const pidInput = document.getElementById('pid');
+    const edadInput = document.getElementById('edad');
+    const sexoInput = document.getElementById('sexo');
+    const startButton = document.getElementById('start-button');
+    const feedbackDiv = document.getElementById('feedback');
+    const downloadLink = document.getElementById('download');
+
+    const ghost = { x: 400, y: 300, angle: 0, radius: 40 };
+    const mouse = { x: 0, y: 0 };
+    const blockDuration = 1000;
+    const blocks = 3;
+    let currentBlock = 0;
+    let running = false;
+    let blockStart = 0;
+    let score = 0;
+    let errors = [];
+    let blockErrors = [];
+    let waitingForHold = true;
+    let holdStartTime = null;
+
+    const tol = 50;
+
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    });
+
+    startButton.onclick = () => {
+      if (!pidInput.value || !edadInput.value) {
+        alert("Rellena todos los campos.");
+        return;
+      }
+      document.getElementById('form').style.display = 'none';
+      startExperiment();
+    };
+
+    function startExperiment() {
+      currentBlock = 0;
+      errors = [];
+      blockErrors = [];
+      nextBlock();
+    }
+
+    function nextBlock() {
+    ghost.x = canvas.width / 2;
+    ghost.y = canvas.height / 2;
+    ghostAngle = Math.random() * 2 * Math.PI;
+
+    score = 0;
+    errors = [];
+    waitingForHold = true;
+    holdStartTime = null;
+
+    lastTimestamp = null;
+    requestAnimationFrame(update);
+    }
+
+    function drawGhost(color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(ghost.x, ghost.y, ghost.radius, 0, Math.PI * 2);
+      ctx.fill();
+      // ojos
+      ctx.fillStyle = 'black';
+      if (distance(mouse, ghost) < tol) {
+        // cruces
+        ctx.save();
+        ctx.translate(ghost.x - 10, ghost.y - 10);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillRect(-2, -10, 4, 20);
+        ctx.fillRect(-10, -2, 20, 4);
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(ghost.x + 10, ghost.y - 10);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillRect(-2, -10, 4, 20);
+        ctx.fillRect(-10, -2, 20, 4);
+        ctx.restore();
+      } else {
+        ctx.beginPath();
+        ctx.arc(ghost.x - 10, ghost.y - 10, 5, 0, 2 * Math.PI);
+        ctx.arc(ghost.x + 10, ghost.y - 10, 5, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
+
+    function drawCursor() {
+      ctx.strokeStyle = 'black';
+      ctx.beginPath();
+      ctx.moveTo(mouse.x - 10, mouse.y);
+      ctx.lineTo(mouse.x + 10, mouse.y);
+      ctx.moveTo(mouse.x, mouse.y - 10);
+      ctx.lineTo(mouse.x, mouse.y + 10);
+      ctx.stroke();
+    }
+
+    function distance(a, b) {
+      return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+    }
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const maxDistX = canvas.width * 0.35;
+    const maxDistY = canvas.height * 0.35;
+
+    let returnFrames = 0;
+    let ghostAngle = Math.random() * 2 * Math.PI;
+    const maxReturnFrames = 5;
+    let lastTimestamp = null;
+
+    function update(t) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!lastTimestamp) lastTimestamp = t;
+        const deltaTime = (t - lastTimestamp) / 1000; // tiempo entre frames en segundos
+        lastTimestamp = t;
+
+        const speed = 100; // píxeles por segundo
+        const angleChangeRate = Math.PI * 30; // radianes por segundo (ajustable)
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const maxDistX = canvas.width * 0.35;
+        const maxDistY = canvas.height * 0.35;
+
+        const dx = ghost.x - centerX;
+        const dy = ghost.y - centerY;
+
+        if (returnFrames > 0) {
+        returnFrames--;
+        // mantener dirección de retorno
+        } else {
+        // variación continua del ángulo (browniano orientado)
+        ghostAngle += (Math.random() * 2 - 1) * angleChangeRate * deltaTime;
+        }
+
+        // Si se sale de los límites, invertir dirección
+        if (Math.abs(dx) > maxDistX || Math.abs(dy) > maxDistY) {
+        ghostAngle += Math.PI;
+        returnFrames = maxReturnFrames;
+        }
+        if (waitingForHold) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGhost('white');
+            drawCursor();
+
+            const d = distance(mouse, ghost);
+
+            if (d < tol) {
+                if (!holdStartTime) holdStartTime = t;
+                if (t - holdStartTime >= 1000) {
+                waitingForHold = false;
+                blockStart = t;
+                }
+            } else {
+                holdStartTime = null;
+            }
+
+            ctx.fillStyle = "black";
+            ctx.fillText("Mantén el cursor sobre el fantasma durante 1 segundo para comenzar", 100, 40);
+
+            requestAnimationFrame(update);
+            return;
+        }
+
+        // aplicar movimiento en la dirección actual
+        ghost.x += Math.cos(ghostAngle) * speed * deltaTime;
+        ghost.y += Math.sin(ghostAngle) * speed * deltaTime;
+
+      const errX = mouse.x - ghost.x;
+      const errY = mouse.y - ghost.y;
+      errors.push({ x: errX, y: errY });
+
+      const errDist = distance(mouse, ghost);
+      const inTolerance = errDist < tol;
+      if (inTolerance) score++;
+
+      drawGhost(inTolerance ? 'red' : 'white');
+      drawCursor();
+
+      // timer
+      const elapsed = t - blockStart;
+      ctx.fillStyle = 'black';
+      ctx.fillText(`Bloque ${currentBlock + 1} / ${blocks} - Puntos: ${score}`, 20, 20);
+      ctx.strokeStyle = 'black';
+      ctx.beginPath();
+      ctx.arc(750, 50, 30, -Math.PI / 2, -Math.PI / 2 + (elapsed / blockDuration) * 2 * Math.PI);
+      ctx.stroke();
+
+      if (elapsed < blockDuration) {
+        requestAnimationFrame(update);
+      } else {
+        running = false;
+        const avgError = errors.reduce((acc, e) => acc + Math.sqrt(e.x**2 + e.y**2), 0) / errors.length;
+        blockErrors.push(avgError.toFixed(1));
+        showBlockFeedback();
+      }
+    }
+
+    function showBlockFeedback() {
+      feedbackDiv.innerHTML = `Bloque ${currentBlock + 1} finalizado. Puntos: ${score}.<br>Error medio: ${blockErrors[currentBlock]} px.`;
+      feedbackDiv.style.display = 'block';
+      setTimeout(() => {
+        feedbackDiv.style.display = 'none';
+        currentBlock++;
+        if (currentBlock < blocks) {
+          errors = [];
+          nextBlock();
+        } else {
+          showFinal();
+        }
+      }, 3000);
+    }
+
+    function showFinal() {
+      feedbackDiv.innerHTML = `<h3>¡Gracias por participar!</h3>
+        <p>Error medio por bloque:<br>${blockErrors.map((e, i) => `Bloque ${i + 1}: ${e} px`).join('<br>')}</p>`;
+      feedbackDiv.style.display = 'block';
+
+      drawHeatmap();
+    }
+
+    function drawHeatmap() {
+  const width = 600;
+  const height = 600;
+  const bins = 120;  // mayor resolución
+  const margin = 50;
+
+  const scale = 400; // ±200 px → 400 px total
+  const binSize = scale / bins;
+
+  const data = errors.map(e => ({
+    x: Math.max(-200, Math.min(200, e.x)),
+    y: Math.max(-200, Math.min(200, e.y))
+  }));
+
+  const counts = Array.from({ length: bins }, () => Array(bins).fill(0));
+
+  data.forEach(({ x, y }) => {
+    const i = Math.floor((x + 200) / binSize);
+    const j = Math.floor((y + 200) / binSize);
+    if (i >= 0 && i < bins && j >= 0 && j < bins) counts[j][i]++;
+  });
+
+  const maxCount = Math.max(...counts.flat());
+
+  heatCtx.clearRect(0, 0, width, height);
+
+  // Dibujar heatmap
+  for (let i = 0; i < bins; i++) {
+    for (let j = 0; j < bins; j++) {
+      const alpha = counts[j][i] / maxCount;
+      heatCtx.fillStyle = `rgba(255,0,0,${alpha})`;
+      heatCtx.fillRect(
+        margin + i * ((width - 2 * margin) / bins),
+        margin + j * ((height - 2 * margin) / bins),
+        (width - 2 * margin) / bins,
+        (height - 2 * margin) / bins
+      );
+    }
+  }
+
+  // Dibujar ejes
+  heatCtx.strokeStyle = 'black';
+  heatCtx.lineWidth = 1;
+
+  // Eje X
+  heatCtx.beginPath();
+  heatCtx.moveTo(margin, height / 2);
+  heatCtx.lineTo(width - margin, height / 2);
+  heatCtx.stroke();
+
+  // Eje Y
+  heatCtx.beginPath();
+  heatCtx.moveTo(width / 2, margin);
+  heatCtx.lineTo(width / 2, height - margin);
+  heatCtx.stroke();
+
+  // Títulos
+  heatCtx.fillStyle = 'black';
+  heatCtx.font = '16px sans-serif';
+  heatCtx.fillText('Error Y (px)', width / 2 - 40, height - 10);
+  heatCtx.save();
+  heatCtx.translate(10, height / 2 + 40);
+  heatCtx.rotate(-Math.PI / 2);
+  heatCtx.fillText('Error X (px)', 0, 10);
+  heatCtx.restore();
+
+  // Marcas de escala en X
+  for (let x = -200; x <= 200; x += 100) {
+    const px = ((x + 200) / scale) * (width - 2 * margin) + margin;
+    heatCtx.fillText(x.toString(), px - 10, height / 2 + 20);
+    heatCtx.beginPath();
+    heatCtx.moveTo(px, height / 2 - 5);
+    heatCtx.lineTo(px, height / 2 + 5);
+    heatCtx.stroke();
+  }
+
+  // Marcas de escala en Y
+  for (let y = -200; y <= 200; y += 100) {
+    const py = ((y + 200) / scale) * (height - 2 * margin) + margin;
+    if(y != 0){
+        heatCtx.fillText((-y).toString(), width / 2 + 15, py + 20);
+        heatCtx.beginPath();
+        heatCtx.moveTo(width / 2 - 5, py);
+        heatCtx.lineTo(width / 2 + 5, py);
+        heatCtx.stroke();
+    }
+  }
+
+  heatmapCanvas.style.display = 'block';
+  downloadLink.href = heatmapCanvas.toDataURL();
+  downloadLink.download = `heatmap_${pidInput.value}.png`;
+  downloadLink.style.display = 'block';
+}
+
+  </script>
+</body>
+</html>
