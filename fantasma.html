@@ -117,7 +117,7 @@
     let lastTouch = null;
     let isTouchActive = false;
 
-    const tol = 50;
+    const tol = ghost.radius;
 
     function updateMousePosition(x, y) {
     const rect = canvas.getBoundingClientRect();
@@ -189,34 +189,35 @@
     }
 
     function drawGhost(color) {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(ghost.x, ghost.y, ghost.radius, 0, Math.PI * 2);
-      ctx.fill();
-      // ojos
-      ctx.fillStyle = 'black';
-      if (distance(mouse, ghost) < tol) {
-        // cruces
-        ctx.save();
-        ctx.translate(ghost.x - 10, ghost.y - 10);
-        ctx.rotate(Math.PI / 4);
-        ctx.fillRect(-2, -10, 4, 20);
-        ctx.fillRect(-10, -2, 20, 4);
-        ctx.restore();
+  // Círculo principal del fantasma
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(ghost.x, ghost.y, ghost.radius, 0, Math.PI * 2);
+  ctx.fill();
 
-        ctx.save();
-        ctx.translate(ghost.x + 10, ghost.y - 10);
-        ctx.rotate(Math.PI / 4);
-        ctx.fillRect(-2, -10, 4, 20);
-        ctx.fillRect(-10, -2, 20, 4);
-        ctx.restore();
-      } else {
-        ctx.beginPath();
-        ctx.arc(ghost.x - 10, ghost.y - 10, 5, 0, 2 * Math.PI);
-        ctx.arc(ghost.x + 10, ghost.y - 10, 5, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-    }
+  // Cruz girada (45°): líneas diagonales centradas en el fantasma
+  ctx.save();
+  ctx.translate(ghost.x, ghost.y);
+  ctx.rotate(Math.PI / 4); // girar 45 grados
+
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 4;
+
+  // Línea diagonal de izquierda a derecha
+  ctx.beginPath();
+  ctx.moveTo(-ghost.radius, 0);
+  ctx.lineTo(ghost.radius, 0);
+  ctx.stroke();
+
+  // Línea diagonal de derecha a izquierda
+  ctx.beginPath();
+  ctx.moveTo(0, -ghost.radius);
+  ctx.lineTo(0, ghost.radius);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 
     function drawCursor() {
       ctx.strokeStyle = 'black';
@@ -240,7 +241,7 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    let returnFrames = 0;
+    let returnToCenterFrames = 0;
     let ghostAngle = Math.random() * 2 * Math.PI;
     const maxReturnFrames = 5;
     let lastTimestamp = null;
@@ -255,7 +256,7 @@
         const deltaTime = (t - lastTimestamp) / 1000; // tiempo entre frames en segundos
         lastTimestamp = t;
 
-        const speed = 100; // píxeles por segundo
+        const speed = 250; // píxeles por segundo
         const angleChangeRate = Math.PI * 30; // radianes por segundo (ajustable)
 
         const centerX = canvas.width / 2;
@@ -267,19 +268,22 @@
         const dx = ghost.x - centerX;
         const dy = ghost.y - centerY;
 
-        if (returnFrames > 0) {
-        returnFrames--;
-        // mantener dirección de retorno
+        if (returnToCenterFrames > 0) {
+        returnToCenterFrames--;
+        // Calcular ángulo hacia el centro y moverse en esa dirección
+        const angleToCenter = Math.atan2(centerY - ghost.y, centerX - ghost.x);
+        ghostAngle = angleToCenter;
         } else {
-        // variación continua del ángulo (browniano orientado)
+        // Movimiento browniano continuo
         ghostAngle += (Math.random() * 2 - 1) * angleChangeRate * deltaTime;
         }
 
+
         // Si se sale de los límites, invertir dirección
         if (Math.abs(dx) > maxDistX || Math.abs(dy) > maxDistY) {
-        ghostAngle += Math.PI;
-        returnFrames = maxReturnFrames;
+        returnToCenterFrames = 10; // forzar 10 frames hacia el centro
         }
+
         if (waitingForHold) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawGhost('white');
