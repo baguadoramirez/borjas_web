@@ -11,319 +11,367 @@
       margin: 0;
       overflow: hidden;
     }
-    #fixation, #cue, #target-left, #target-right, #instructions {
+
+    /* Selector de idioma */
+    #lang-selection {
       position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 80px;
+      top: 30%;
+      left: 50%;
+      transform: translateX(-50%);
       text-align: center;
     }
-    #fixation {
-      left: 50%;
-      transform: translate(-50%, -50%);
+    #lang-selection button {
+      font-size: 24px;
+      padding: 10px 20px;
+      margin: 0 10px;
+      cursor: pointer;
     }
-    #cue {
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
-    #target-left {
-      left: 15%;
-    }
+
+    /* Instrucciones y estímulos ocultos hasta iniciar */
+    #instructions,
+    #fixation,
+    #cue,
+    #target-left,
     #target-right {
-      right: 15%;
-    }
-    #target-left, #target-right {
+      display: none;
+      position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      position: absolute;
-      font-size: 80px;
+      text-align: center;
     }
     #instructions {
       width: 80%;
       left: 10%;
       font-size: 28px;
       line-height: 1.6;
+      text-align: left;
+    }
+    #fixation, #cue {
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 60px;
+    }
+    #target-left, #target-right {
+      font-size: 80px;
+      top: 50%;
+      position: absolute;
+      transform: translateY(-50%);
+    }
+    #target-left { left: 15%; }
+    #target-right { right: 15%; }
+
+    /* Formulario inicial */
+    #participant-form {
+      display: none;
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 24px;
     }
 
-    /* Botones táctiles */
+    /* Botones de respuesta: ocultos hasta el momento de responder */
     #response-buttons {
       position: absolute;
       bottom: 0;
+      left: 0;
       width: 100%;
       height: 20%;
-      display: flex;
+      display: none;
       justify-content: space-between;
       align-items: center;
     }
-
     .button-area {
       width: 40%;
       height: 100%;
       background-color: #8B0000;
       opacity: 0.8;
-      margin: 5%;
+      margin: 0 5%;
       border-radius: 10px;
+      cursor: pointer;
     }
-
     .button-area:active {
       opacity: 1;
     }
+
+    /* Link de descarga */
+    #downloadLink {
+      position: absolute;
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 20px;
+      text-decoration: underline;
+      display: none;
+      cursor: pointer;
+    }
+
+    /* Canvas oculto */
+    #resultsCanvas { display: none; }
   </style>
 </head>
 <body>
+
+  <!-- 1) Selección de idioma -->
+  <div id="lang-selection">
+    <h1>Selecciona el idioma / Select language</h1>
+    <button id="btn-es">Castellano</button>
+    <button id="btn-en">English</button>
+  </div>
+
+  <!-- 2) Formulario participante -->
   <div id="participant-form">
-    <h1>Introduce tu nombre:</h1>
-    <input type="text" id="participant-name" placeholder="Tu nombre" style="font-size:24px;">
+    <h1 id="pf-title"></h1>
+    <input type="text" id="participant-name" placeholder="" style="font-size:24px;">
     <br><br>
-    <button onclick="showInstructions()" style="font-size:24px;">Continuar</button>
+    <button id="pf-continue" style="font-size:24px;"></button>
   </div>
-  
-  <div id="instructions" style="display:none;">
-    <h1>Bienvenido/a al experimento</h1>
-    <p>Verás una cruz (+) en el centro de la pantalla.</p>
-    <p>Después, aparecerá una flecha que puede indicar hacia dónde saldrá el estímulo (●).</p>
-    <p>Tu tarea es responder lo más rápido posible:</p>
-    <ul>
-      <li>Pulsa la tecla ← o TOCA el botón izquierdo si el ● aparece a la izquierda.</li>
-      <li>Pulsa la tecla → o TOCA el botón derecho si el ● aparece a la derecha.</li>
-    </ul>
-    <p>Presiona cualquier tecla o toca la pantalla para comenzar.</p>
-  </div>
-  
-  <canvas id="resultsCanvas" width="600" height="450" style="display:none;"></canvas>
-  <a id="downloadLink" style="display:none;">Descargar imagen de resultados</a>
-  
 
-  <div id="fixation" style="display:none;">+</div>
-  <div id="cue" style="display:none;"></div>
-  <div id="target-left" style="display:none;">●</div>
-  <div id="target-right" style="display:none;">●</div>
+  <!-- 3) Instrucciones -->
+  <div id="instructions"></div>
 
-  <!-- Botones de respuesta táctil -->
-  <div id="response-buttons" style="display:none;">
+  <!-- 4) Canvas y link (canvas oculto) -->
+  <canvas id="resultsCanvas" width="600" height="450"></canvas>
+  <!-- reemplázalo por esto -->
+  <a id="downloadLink" style="
+      position: absolute;
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 20px;
+      text-decoration: underline;
+      display: none;
+      cursor: pointer;
+    ">
+    Descargar imagen de resultados
+  </a>
+
+  <!-- 5) Estímulos -->
+  <div id="fixation">+</div>
+  <div id="cue"></div>
+  <div id="target-left">●</div>
+  <div id="target-right">●</div>
+
+  <!-- 6) Botones de respuesta -->
+  <div id="response-buttons">
     <div id="left-button" class="button-area"></div>
     <div id="right-button" class="button-area"></div>
   </div>
 
-  <script>
-    const fixation = document.getElementById("fixation");
-    const cue = document.getElementById("cue");
-    const leftTarget = document.getElementById("target-left");
-    const rightTarget = document.getElementById("target-right");
-    const instructions = document.getElementById("instructions");
-    const responseButtons = document.getElementById("response-buttons");
-    const leftButton = document.getElementById("left-button");
-    const rightButton = document.getElementById("right-button");
-
-    const numTrials = 20;
-    const proportionValid = 0.7;
-    const proportionInvalid = 0.15;
-    const proportionNeutral = 0.15;
-
-    const fixationTime = 500;
-    const cueTime = 100;
-    const soa = 100;
-    const maxResponseTime = 1500;
-
-    let trials = [];
-
-    for (let i = 0; i < numTrials; i++) {
-      let r = Math.random();
-      let condition = r < proportionValid ? "valid" : (r < proportionValid + proportionInvalid ? "invalid" : "neutral");
-      let cueSide = Math.random() < 0.5 ? "left" : "right";
-      let targetSide;
-
-      if (condition === "valid") {
-        targetSide = cueSide;
-      } else if (condition === "invalid") {
-        targetSide = cueSide === "left" ? "right" : "left";
-      } else {
-        cueSide = "neutral";
-        targetSide = Math.random() < 0.5 ? "left" : "right";
-      }
-
-      trials.push({ condition, cueSide, targetSide });
+<script>
+  const texts = {
+    es: {
+      pfTitle: "Introduce tu nombre:",
+      pfPlaceholder: "Tu nombre",
+      pfContinue: "Continuar",
+      welcome: "Bienvenido/a al experimento",
+      instr: [
+        "Verás una cruz (+) en el centro.",
+        "Luego aparecerá una flecha que indica dónde saldrá el estímulo (●).",
+        "Tu tarea es responder lo más rápido posible:"
+      ],
+      list: [
+        "Pulsa ← o toca el botón izquierdo si el ● aparece a la izquierda.",
+        "Pulsa → o toca el botón derecho si el ● aparece a la derecha."
+      ],
+      start: "Presiona cualquier tecla o toca la pantalla para comenzar.",
+      resultsTitle: "Resultados:",
+      download: "Descargar imagen de resultados"
+    },
+    en: {
+      pfTitle: "Enter your name:",
+      pfPlaceholder: "Your name",
+      pfContinue: "Continue",
+      welcome: "Welcome to the experiment",
+      instr: [
+        "You will see a cross (+) at the center.",
+        "Then an arrow will indicate where the stimulus (●) will appear.",
+        "Your task is to respond as quickly as possible:"
+      ],
+      list: [
+        "Press ← or touch the left button if the ● appears on the left.",
+        "Press → or touch the right button if the ● appears on the right."
+      ],
+      start: "Press any key or touch the screen to begin.",
+      resultsTitle: "Results:",
+      download: "Download results image"
     }
+  };
 
-    trials = trials.sort(() => Math.random() - 0.5);
+  let lang;
+  const btnEs = document.getElementById('btn-es');
+  const btnEn = document.getElementById('btn-en');
+  const langDiv = document.getElementById('lang-selection');
+  const pfDiv = document.getElementById('participant-form');
+  const pfTitle = document.getElementById('pf-title');
+  const pfInput = document.getElementById('participant-name');
+  const pfContinue = document.getElementById('pf-continue');
 
-    let trialIndex = -1;
-    let startTime = 0;
-    let data = [];
+  btnEs.onclick = () => initLang('es');
+  btnEn.onclick = () => initLang('en');
 
-    function nextTrial() {
-      trialIndex++;
-      if (trialIndex >= trials.length) {
-        showResults();
-        return;
-      }
+  function initLang(l) {
+    lang = l;
+    langDiv.style.display = 'none';
+    setupParticipantForm();
+  }
 
-      fixation.style.display = "block";
-      cue.style.display = "none";
-      leftTarget.style.display = "none";
-      rightTarget.style.display = "none";
-      responseButtons.style.display = "none";
+  function setupParticipantForm() {
+    const t = texts[lang];
+    pfTitle.textContent = t.pfTitle;
+    pfInput.placeholder = t.pfPlaceholder;
+    pfContinue.textContent = t.pfContinue;
+    pfDiv.style.display = 'block';
+    pfContinue.onclick = showInstructions;
+  }
 
-      setTimeout(() => showCue(trials[trialIndex]), fixationTime);
-    }
+  const numTrials = 100;
+  const propValid = 0.5, propNeutral = 0.25, propInvalid = 0.25;
+  const fixationTime = 500, cueTime = 200, soa = 100;
+  let trials = [], trialIndex = -1, startTime = 0, data = [];
 
-    function showCue(trial) {
-      fixation.style.display = "none";
-      cue.style.display = "block";
+  for (let i = 0; i < numTrials; i++) {
+    const r = Math.random();
+    const condition = r < propValid
+      ? 'valid'
+      : r < propValid + propNeutral
+        ? 'neutral'
+        : 'invalid';
+    let cueSide = (condition === 'neutral')
+      ? 'neutral'
+      : (Math.random() < .5 ? 'left' : 'right');
+    let targetSide;
+    if (condition === 'valid')        targetSide = cueSide;
+    else if (condition === 'invalid') targetSide = (cueSide === 'left' ? 'right' : 'left');
+    else                              targetSide = (Math.random() < .5 ? 'left' : 'right');
+    trials.push({condition, cueSide, targetSide});
+  }
+  trials.sort(() => Math.random() - .5);
 
-      if (trial.cueSide === "left") {
-        cue.innerHTML = "⬅︎";
-      } else if (trial.cueSide === "right") {
-        cue.innerHTML = "➡︎";
-      } else {
-        cue.innerHTML = "+";
-      }
+  const instructionsEl = document.getElementById('instructions');
+  const fixationEl = document.getElementById('fixation');
+  const cueEl = document.getElementById('cue');
+  const leftT = document.getElementById('target-left');
+  const rightT = document.getElementById('target-right');
+  const respBtns = document.getElementById('response-buttons');
+  const leftBtn = document.getElementById('left-button');
+  const rightBtn = document.getElementById('right-button');
+  const downloadLink = document.getElementById('downloadLink');
+  const canvas = document.getElementById('resultsCanvas');
 
-      setTimeout(() => {
-        cue.style.display = "none";
-        setTimeout(() => showTarget(trial), soa);
-      }, cueTime);
-    }
+  function showInstructions() {
+    const name = pfInput.value.trim();
+    if (!name) return alert(texts[lang].pfPlaceholder);
+    pfDiv.style.display = 'none';
+    const t = texts[lang];
+    let html = `<h1>${t.welcome}</h1>`;
+    t.instr.forEach(p => html += `<p>${p}</p>`);
+    html += '<ul>';
+    t.list.forEach(li => html += `<li>${li}</li>`);
+    html += `</ul><p>${t.start}</p>`;
+    instructionsEl.innerHTML = html;
+    instructionsEl.style.display = 'block';
+    window.addEventListener('keydown', startExperiment, {once:true});
+    window.addEventListener('touchstart', startExperiment, {once:true});
+  }
 
-    function showTarget(trial) {
-      if (trial.targetSide === "left") {
-        leftTarget.style.display = "block";
-      } else {
-        rightTarget.style.display = "block";
-      }
+  function startExperiment() {
+    instructionsEl.style.display = 'none';
+    nextTrial();
+  }
 
-      responseButtons.style.display = "flex";
-      startTime = performance.now();
+  function nextTrial() {
+    trialIndex++;
+    if (trialIndex >= trials.length) return showResults();
+    hideAll();
+    fixationEl.style.display = 'block';
+    setTimeout(() => showCue(trials[trialIndex]), fixationTime);
+  }
 
-      let timeout = setTimeout(() => {
-        recordResponse(null);
-      }, maxResponseTime);
+  function showCue(trial) {
+    fixationEl.style.display = 'none';
+    cueEl.textContent = trial.cueSide === 'left' ? '◀' : trial.cueSide === 'right' ? '▶' : '+';
+    cueEl.style.display = 'block';
+    setTimeout(() => {
+      cueEl.style.display = 'none';
+      setTimeout(() => showTarget(trial), soa);
+    }, cueTime);
+  }
 
-      function handleInput(response) {
-        clearTimeout(timeout);
-        recordResponse(response);
-      }
-
-      window.onkeydown = function(e) {
-        if (e.key === "ArrowLeft") handleInput("left");
-        if (e.key === "ArrowRight") handleInput("right");
-      };
-
-      leftButton.onclick = () => handleInput("left");
-      rightButton.onclick = () => handleInput("right");
-      leftButton.ontouchstart = () => handleInput("left");
-      rightButton.ontouchstart = () => handleInput("right");
-    }
-
-    function recordResponse(response) {
-      window.onkeydown = null;
-      const trial = trials[trialIndex];
-      const rt = performance.now() - startTime;
-      const correct =
-        (trial.targetSide === "left" && response === "left") ||
-        (trial.targetSide === "right" && response === "right");
-
-      data.push({
-        condition: trial.condition,
-        rt: response ? rt : null,
-        correct: response ? correct : false
-      });
-
-      leftTarget.style.display = "none";
-      rightTarget.style.display = "none";
-      responseButtons.style.display = "none";
-
-      setTimeout(nextTrial, 500);
-    }
-
-    function showResults() {
-  const conditions = ["valid", "invalid", "neutral"];
-  let summary = {};
-  let counts = {};
-
-  for (let cond of conditions) {
-    const condData = data.filter(d => d.condition === cond && d.rt !== null);
-    const correctData = condData.filter(d => d.correct);
-    const avg = correctData.reduce((sum, d) => sum + d.rt, 0) / correctData.length;
-
-    summary[cond] = isNaN(avg) ? "N/A" : avg.toFixed(1);
-    counts[cond] = {
-      total: condData.length,
-      correct: correctData.length
+  function showTarget(trial) {
+    (trial.targetSide === 'left' ? leftT : rightT).style.display = 'block';
+    respBtns.style.display = 'flex';
+    startTime = performance.now();
+    const handle = resp => recordResponse(resp);
+    window.onkeydown = e => {
+      if (e.key === 'ArrowLeft') handle('left');
+      if (e.key === 'ArrowRight') handle('right');
     };
+    leftBtn.onclick = () => handle('left');
+    rightBtn.onclick = () => handle('right');
+    leftBtn.ontouchstart = () => handle('left');
+    rightBtn.ontouchstart = () => handle('right');
   }
 
-  const participant = document.getElementById("participant-name").value || "Anónimo";
-  const date = new Date().toLocaleDateString();
-
-  const canvas = document.getElementById("resultsCanvas");
-  const ctx = canvas.getContext("2d");
-
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "black";
-  ctx.font = "20px sans-serif";
-  ctx.fillText(`Participante: ${participant}`, 20, 30);
-  ctx.fillText(`Fecha: ${date}`, 20, 60);
-
-  let y = 100;
-  for (let cond of conditions) {
-    ctx.fillText(`${cond.charAt(0).toUpperCase() + cond.slice(1)}:`, 20, y);
-    ctx.fillText(`RT medio: ${summary[cond]} ms`, 160, y);
-    ctx.fillText(`Aciertos: ${counts[cond].correct} / ${counts[cond].total}`, 360, y);
-    y += 40;
+  function recordResponse(response) {
+    window.onkeydown = null;
+    const trial = trials[trialIndex];
+    const rt = performance.now() - startTime;
+    const correct = response === trial.targetSide;
+    data.push({condition:trial.condition, rt, correct});
+    hideAll();
+    setTimeout(nextTrial, 500);
   }
 
-  ctx.fillText("¡Gracias por participar!", 20, y + 30);
+  function showResults() {
+    const order = ['valid','neutral','invalid'];
+    const t = texts[lang];
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = 'black'; ctx.font = '20px sans-serif';
+    let y = 40;
+    order.forEach(cond => {
+      const arr = data.filter(d=>d.condition===cond);
+      const corr = arr.filter(d=>d.correct);
+      const avgRt = corr.length
+        ? (corr.reduce((s,d)=>s+d.rt,0)/corr.length).toFixed(2)
+        : 'N/A';
+      const pct = arr.length
+        ? ((corr.length/arr.length)*100).toFixed(2)
+        : 'N/A';
+      const L = cond.charAt(0).toUpperCase()+cond.slice(1);
+      ctx.fillText(`${L}: RT ${avgRt} ms — ${pct}% (${corr.length}/${arr.length})`, 20, y);
+      y += 40;
+    });
+    fixationEl.innerHTML = `<h2>${t.resultsTitle}</h2>` +
+      order.map(cond => {
+        const arr = data.filter(d=>d.condition===cond);
+        const corr = arr.filter(d=>d.correct);
+        const avgRt = corr.length
+          ? (corr.reduce((s,d)=>s+d.rt,0)/corr.length).toFixed(2)
+          : 'N/A';
+        const pct = arr.length
+          ? ((corr.length/arr.length)*100).toFixed(2)
+          : 'N/A';
+        const L = cond.charAt(0).toUpperCase()+cond.slice(1);
+        return `<p>${L}: RT ${avgRt} ms — ${pct}% (${corr.length}/${arr.length})</p>`;
+      }).join('') +
+      `<p>${t.download}</p>`;
+    fixationEl.style.display = 'block';
 
-  const downloadLink = document.getElementById("downloadLink");
-  downloadLink.href = canvas.toDataURL("image/png");
-  downloadLink.download = `resultados_${participant}_${date}.png`;
-  downloadLink.textContent = "Descargar imagen de resultados";
-  downloadLink.style.display = "block";
-  downloadLink.style.fontSize = "20px";
-  downloadLink.style.marginTop = "20px";
-
-  fixation.innerHTML = `
-    <h2>Resultados:</h2>
-    <p>Válida: ${summary.valid} ms — Aciertos: ${counts.valid.correct/counts.valid.total*100} %</p>
-    <p>Inválida: ${summary.invalid} ms — Aciertos: ${counts.invalid.correct / counts.invalid.total*100} %</p>
-    <p>Neutral: ${summary.neutral} ms — Aciertos: ${counts.neutral.correct / counts.neutral.total*100} %</p>
-    <p>Descarga la imagen con los resultados debajo.</p>
-  `;
-  fixation.style.display = "block";
-}
-
-function showInstructions() {
-  const name = document.getElementById("participant-name").value.trim();
-  if (!name) {
-    alert("Por favor, introduce tu nombre.");
-    return;
+  // Al final de showResults(), después de generar el dataURL:
+  downloadLink.href = canvas.toDataURL('image/png');
+  downloadLink.download = `resultados_${pfInput.value}_${new Date().toLocaleDateString()}.png`;
+  downloadLink.style.display = 'block';
   }
-  document.getElementById("participant-form").style.display = "none";
-  document.getElementById("instructions").style.display = "block";
 
-  window.addEventListener("keydown", startExperiment, { once: true });
-  window.addEventListener("touchstart", startExperiment, { once: true });
-}
-function startExperiment() {
-  const name = document.getElementById("participant-name").value;
-  if (!name.trim()) {
-    alert("Por favor, introduce tu nombre para comenzar.");
-    return;
+  function hideAll() {
+    [instructionsEl, fixationEl, cueEl, leftT, rightT, respBtns]
+      .forEach(el => el.style.display = 'none');
   }
-
-  document.getElementById("participant-form").style.display = "none";
-  document.getElementById("instructions").style.display = "none";
-  fixation.innerHTML = "+";
-  fixation.style.display = "block";
-  setTimeout(nextTrial, 1000);
-}
-
-
-    // Iniciar con clic o tecla
-    window.addEventListener("keydown", startExperiment, { once: true });
-    window.addEventListener("touchstart", startExperiment, { once: true });
-  </script>
+</script>
 </body>
 </html>

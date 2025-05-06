@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Digit Span – Repetición Directa (Responsive)</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    #digit-display {
+      font-size: 10vh;
+      text-align: center;
+      margin-top: 20vh;
+    }
+    #ui {
+      position: absolute;
+      top: 1vh;
+      left: 1vw;
+      width: 98vw;
+      text-align: left;
+      font-size: 2vh;
+    }
+    #language-selection {
+      margin-bottom: 2vh;
+    }
+    #instructions {
+      display: none;
+      margin-top: 2vh;
+    }
+    #input-phase {
+      position: absolute;
+      top: 45vh;
+      width: 100%;
+      text-align: center;
+      display: none;
+    }
+    #response-input {
+      font-size: 3vh;
+      padding: 1vh;
+      width: 20vw;
+    }
+    #feedback {
+      position: absolute;
+      bottom: 2vh;
+      width: 100%;
+      text-align: center;
+      font-size: 4vh;
+      display: none;
+    }
+    #summary {
+      white-space: pre-wrap;
+      text-align: left;
+      background: #222;
+      padding: 1em;
+      border-radius: 5px;
+      max-height: 90vh;
+      overflow-y: auto;
+      display: none;
+      width: 90vw;
+      margin: 5vh auto;
+    }
+    #graph {
+      display: block;
+      margin: 2vh auto;
+      max-width: 80vw;
+      height: auto;
+      background-color: white;
+      padding: 2vh;
+      border-radius: 1vw;
+    }
+    button {
+      font-size: 2vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="digit-display"></div>
+  <div id="ui">
+    <div id="language-selection">
+      <p>
+        Elige tu idioma:
+        <button onclick="setLanguage('es')">Español</button>
+        <button onclick="setLanguage('en')">English</button>
+      </p>
+    </div>
+    <p id="instructions">
+      Bienvenido/a al test de span de dígitos. Se te mostrarán dígitos uno por uno en el centro de la pantalla.<br>
+      Memoriza la secuencia en el mismo orden en que se te presenta.<br><br>
+      Por ejemplo, si ves: 3, 7, 1, debes escribir: 371.<br><br>
+      La longitud cambiará según tu rendimiento. Pulsa cualquier tecla para comenzar.
+    </p>
+  </div>
+  <div id="input-phase">
+    <input type="text" id="response-input" maxlength="20" />
+    <button onclick="submitResponse()">Enviar</button>
+  </div>
+  <div id="feedback"></div>
+  <div id="summary">
+    <h2 id="thanksText"></h2>
+    <h3 id="feedbackSpan"></h3>
+    <button onclick="downloadCSV()">Descargar CSV</button>
+    <div id="graph"></div>
+  </div>
+
+<script>
+  let language = 'es';
+  let participantName = '';
+  let participantAge = '';
+
+  function setLanguage(lang) {
+    language = lang;
+    participantName = prompt(lang === 'es' ? "Introduce tu nombre:" : "Enter your name:");
+    participantAge = prompt(lang === 'es' ? "Introduce tu edad:" : "Enter your age:");
+    // hide language buttons
+    document.getElementById('language-selection').style.display = 'none';
+    // show instructions
+    const instr = document.getElementById('instructions');
+    instr.style.display = 'block';
+    instr.style.textAlign = 'center';
+    instr.innerHTML = lang === 'es'
+      ? "Bienvenido/a al test de span de dígitos. Se te mostrarán dígitos uno por uno en el centro de la pantalla.<br>Memoriza la secuencia en el mismo orden en que se te presenta.<br><br>Por ejemplo, si ves: 3, 7, 1, debes escribir: 371.<br><br>La longitud cambiará según tu rendimiento. Pulsa cualquier tecla para comenzar."
+      : "Welcome to the digit span test. Digits will appear one by one in the center of the screen.<br>Remember the sequence in the same order it was shown.<br><br>For example, if you see: 3, 7, 1, you must type: 371.<br><br>The length will change according to your performance. Press any key to start.";
+  }
+
+  const display = document.getElementById("digit-display");
+  const inputDiv = document.getElementById("input-phase");
+  const inputBox = document.getElementById("response-input");
+  const feedbackDiv = document.getElementById("feedback");
+  const summaryDiv = document.getElementById("summary");
+  // submit on Enter
+  inputBox.addEventListener("keydown", e => { if(e.key === "Enter") submitResponse(); });
+  const instructions = document.getElementById("instructions");
+
+  let currentLength = 3;
+  let incorrectStreak = 0;
+  let maxTrials = 4;
+  let trialCount = 0;
+  let digits = [];
+  let results = [];
+
+  document.addEventListener("keydown", (e) => {
+    // only start on any key if instructions visible
+    if (instructions.style.display === 'block') {
+      instructions.style.display = 'none';
+      nextTrial();
+    }
+  });
+
+  function generateSequence(length) {
+    const sequence = [];
+    for (let i = 0; i < length; i++) {
+      let digit;
+      do {
+        digit = Math.floor(Math.random() * 10).toString();
+      } while (i > 0 && digit === sequence[i - 1]);
+      sequence.push(digit);
+    }
+    return sequence;
+  }
+
+  function nextTrial() {
+    digits = generateSequence(currentLength);
+    trialCount++;
+    showDigits(0);
+  }
+
+  function showDigits(index) {
+    // hide input while showing
+    inputDiv.style.display = 'none';
+    display.style.display = 'block';
+    display.textContent = digits[index];
+    // speak
+    const voices = speechSynthesis.getVoices();
+    const utter = new SpeechSynthesisUtterance(digits[index]);
+    utter.lang = language === 'es' ? 'es-ES' : 'en-US';
+    const v = voices.find(v => v.lang === utter.lang);
+    if (v) utter.voice = v;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utter);
+    setTimeout(() => {
+      display.textContent = '';
+      if (index < digits.length - 1) {
+        setTimeout(() => showDigits(index + 1), 500);
+      } else {
+        display.style.display = 'none';
+        setTimeout(startInputPhase, 200);
+      }
+    }, 1000);
+  }
+
+  function startInputPhase() {
+    inputDiv.style.display = 'block';
+    inputBox.value = '';
+    inputBox.focus();
+  }
+
+  function submitResponse() {
+    const input = inputBox.value.trim();
+    inputDiv.style.display = 'none';
+    const correct = input === digits.join("");
+        const numCorrect = digits.filter((d,i) => input[i] === d).length;
+feedbackDiv.textContent = correct ? "¡Correcto!" : (language==='es' ? `Incorrecto. Era: ${digits.join(" ")}` : `Incorrect. Was: ${digits.join(" ")}`);
+    feedbackDiv.style.display = 'block';
+
+    if (correct) {
+      incorrectStreak = 0;
+      currentLength++;
+    } else {
+      incorrectStreak++;
+      if (incorrectStreak >= 2 && currentLength > 2) {
+        currentLength--;
+        incorrectStreak = 0;
+      }
+    }
+
+    results.push({
+      name: participantName,
+      age: participantAge,
+      n_trial: trialCount,
+      secuencia: digits.join(""),
+      "secuencia introducida": input,
+      correct_io: correct ? 1 : 0,
+      mean: 0,
+      sd: 0,
+      aciertos: numCorrect,
+      acumulado_aciertos: results.reduce((a,r)=>a+r.aciertos,0) + numCorrect
+    });
+
+    setTimeout(() => {
+      feedbackDiv.style.display = 'none';
+      if (trialCount < maxTrials) {
+        nextTrial();
+      } else {
+        showSummary();
+      }
+    }, 2000);
+  }
+
+  function sigmoid(x) {
+    return 1 / (1 + Math.exp(-x));
+  }
+
+  
+  function fitLogistic(data) {
+    const grouped = {};
+    data.forEach(r => {
+      const len = r.secuencia.length;
+      if (!grouped[len]) grouped[len] = { correct: 0, total: 0 };
+      grouped[len].total += 1;
+      if (r.correct_io) grouped[len].correct += 1;
+    });
+    const x = [], y = [];
+    for (let len in grouped) {
+      x.push(parseFloat(len));
+      y.push(grouped[len].correct / grouped[len].total);
+    }
+    let a = 0, b = 1, lr = 0.01;
+    for (let epoch = 0; epoch < 1000; epoch++) {
+      let da = 0, db = 0;
+      for (let i = 0; i < x.length; i++) {
+        const z = a + b * x[i];
+        const p = sigmoid(z);
+        const error = p - y[i];
+        da += error;
+        db += error * x[i];
+      }
+      a -= lr * da;
+      b -= lr * db;
+    }
+    const cpd = -a / b;
+    return { cpd, a, b, x, y };
+  }
+
+  function showGraphLogistic(a, b, x, y, lang) {
+    const c = document.createElement('canvas');
+    c.width = 600; c.height = 400;
+    const ctx = c.getContext("2d");
+    ctx.clearRect(0,0,600,400);
+    ctx.strokeStyle="#000"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(50,350); ctx.lineTo(550,350);
+    ctx.moveTo(50,50); ctx.lineTo(50,350); ctx.stroke();
+    ctx.fillStyle="#000"; ctx.font="14px Arial";
+    ctx.fillText(lang === "es" ? "Longitud" : "Sequence length", 250,380);
+    ctx.save(); ctx.translate(10,250); ctx.rotate(-Math.PI/2);
+    ctx.fillText(lang === "es" ? "Proporción aciertos" : "Proportion correct", 0,0); ctx.restore();
+    for(let i=0;i<=1;i+=0.2){
+      const yPix=350-i*300;
+      ctx.fillText(i.toFixed(1),20,yPix+5);
+      ctx.beginPath(); ctx.moveTo(45,yPix); ctx.lineTo(55,yPix); ctx.stroke();
+    }
+    for(let i=2;i<=9;i++){
+      const xPix=50+((i-2)/7)*500;
+      ctx.fillText(i,xPix-5,365);
+      ctx.beginPath(); ctx.moveTo(xPix,345); ctx.lineTo(xPix,355); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.strokeStyle="blue"; ctx.lineWidth=2;
+    for(let i=0;i<=100;i++){
+      const val=2+i*(7/100);
+      const prob=sigmoid(a+b*val);
+      const px=50+((val-2)/7)*500;
+      const py=350-prob*300;
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+    ctx.fillStyle="red";
+    x.forEach((val,i)=> {
+      const px=50+((val-2)/7)*500;
+      const py=350-y[i]*300;
+      ctx.beginPath(); ctx.arc(px,py,4,0,2*Math.PI); ctx.fill();
+    });
+    return c;
+  }
+
+  function showSummary() {
+    const { cpd, a, b, x, y } = fitLogistic(results);
+        // set mean and sd on results
+    results.forEach(r => { r.mean = cpd.toFixed(2); r.sd = "".toString(); });
+    const graph = showGraphLogistic(a, b, x, y, language);
+    summaryDiv.style.display = 'block';
+    document.getElementById("thanksText").textContent = language==='es' ? 'Gracias por participar' : 'Thank you for participating';
+    document.getElementById("feedbackSpan").textContent =
+      language==='es'
+      ? `Tu digit span estimado (50% aciertos) es ${cpd.toFixed(2)}.`
+      : `Your estimated digit span (50% correct) is ${cpd.toFixed(2)}.`;
+    const gc = document.getElementById("graph");
+    gc.innerHTML=""; gc.appendChild(graph);
+  }
+
+  function downloadCSV() {
+    const csv = "nombre,edad,n_trial,secuencia,secuencia introducida,correct_io,mean,sd,aciertos,acumulado_aciertos\n" +
+      results.map(r => `${r.name},${r.age},${r.n_trial},${r.secuencia},${r["secuencia introducida"]},${r.correct_io},${r.mean},${r.sd},${r.aciertos},${r.acumulado_aciertos}`).join("\n");
+    const b=new Blob([csv],{type:"text/csv"});
+    const link=document.createElement("a");
+    link.href=URL.createObjectURL(b);
+    link.download="digit_span_results.csv";
+    link.click();
+  }
+</script>
+</body>
+</html>
