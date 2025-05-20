@@ -12,6 +12,18 @@
       overflow: hidden;
     }
 
+    /* Contador de trials */
+    #trialCounter {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      color: red;
+      font-size: 24px;
+      font-weight: bold;
+      display: none;
+      z-index: 10000;
+    }
+
     /* Selector de idioma */
     #lang-selection {
       position: absolute;
@@ -102,7 +114,7 @@
       left: 50%;
       transform: translateX(-50%);
       color: white;
-      font-size: 100px;
+      font-size: 20px;
       text-decoration: underline;
       display: none;
       cursor: pointer;
@@ -113,6 +125,9 @@
   </style>
 </head>
 <body>
+
+  <!-- Contador de ensayos -->
+  <div id="trialCounter">0/0</div>
 
   <!-- 1) Selección de idioma -->
   <div id="lang-selection">
@@ -134,20 +149,7 @@
 
   <!-- 4) Canvas y link (canvas oculto) -->
   <canvas id="resultsCanvas" width="600" height="450"></canvas>
-  <!-- reemplázalo por esto -->
-  <a id="downloadLink" style="
-      position: absolute;
-      bottom: 5%;
-      left: 50%;
-      transform: translateX(-50%);
-      color: white;
-      font-size: 20px;
-      text-decoration: underline;
-      display: none;
-      cursor: pointer;
-    ">
-    Descargar imagen de resultados
-  </a>
+  <a id="downloadLink"></a>
 
   <!-- 5) Estímulos -->
   <div id="fixation">+</div>
@@ -209,6 +211,7 @@
   const pfTitle = document.getElementById('pf-title');
   const pfInput = document.getElementById('participant-name');
   const pfContinue = document.getElementById('pf-continue');
+  const trialCounter = document.getElementById('trialCounter');
 
   btnEs.onclick = () => initLang('es');
   btnEn.onclick = () => initLang('en');
@@ -233,6 +236,7 @@
   const fixationTime = 500, cueTime = 200, soa = 100;
   let trials = [], trialIndex = -1, startTime = 0, data = [];
 
+  // Genera las condiciones
   for (let i = 0; i < numTrials; i++) {
     const r = Math.random();
     const condition = r < propValid
@@ -252,15 +256,15 @@
   trials.sort(() => Math.random() - .5);
 
   const instructionsEl = document.getElementById('instructions');
-  const fixationEl = document.getElementById('fixation');
-  const cueEl = document.getElementById('cue');
-  const leftT = document.getElementById('target-left');
-  const rightT = document.getElementById('target-right');
-  const respBtns = document.getElementById('response-buttons');
-  const leftBtn = document.getElementById('left-button');
-  const rightBtn = document.getElementById('right-button');
-  const downloadLink = document.getElementById('downloadLink');
-  const canvas = document.getElementById('resultsCanvas');
+  const fixationEl     = document.getElementById('fixation');
+  const cueEl          = document.getElementById('cue');
+  const leftT          = document.getElementById('target-left');
+  const rightT         = document.getElementById('target-right');
+  const respBtns       = document.getElementById('response-buttons');
+  const leftBtn        = document.getElementById('left-button');
+  const rightBtn       = document.getElementById('right-button');
+  const downloadLink   = document.getElementById('downloadLink');
+  const canvas         = document.getElementById('resultsCanvas');
 
   function showInstructions() {
     const name = pfInput.value.trim();
@@ -274,18 +278,24 @@
     html += `</ul><p>${t.start}</p>`;
     instructionsEl.innerHTML = html;
     instructionsEl.style.display = 'block';
-    window.addEventListener('keydown', startExperiment, {once:true});
-    window.addEventListener('touchstart', startExperiment, {once:true});
-  }
-
-  function startExperiment() {
-    instructionsEl.style.display = 'none';
-    nextTrial();
+    // Al iniciar, mostramos el contador
+    window.addEventListener('keydown', () => {
+      instructionsEl.style.display = 'none';
+      trialCounter.style.display = 'block';
+      nextTrial();
+    }, { once: true });
+    window.addEventListener('touchstart', () => {
+      instructionsEl.style.display = 'none';
+      trialCounter.style.display = 'block';
+      nextTrial();
+    }, { once: true });
   }
 
   function nextTrial() {
     trialIndex++;
     if (trialIndex >= trials.length) return showResults();
+    // Actualiza el contador
+    trialCounter.textContent = `${trialIndex + 1}/${trials.length}`;
     hideAll();
     fixationEl.style.display = 'block';
     setTimeout(() => showCue(trials[trialIndex]), fixationTime);
@@ -293,7 +303,11 @@
 
   function showCue(trial) {
     fixationEl.style.display = 'none';
-    cueEl.textContent = trial.cueSide === 'left' ? '◀' : trial.cueSide === 'right' ? '▶' : '+';
+    cueEl.textContent = trial.cueSide === 'left'
+      ? '◀'
+      : trial.cueSide === 'right'
+        ? '▶'
+        : '+';
     cueEl.style.display = 'block';
     setTimeout(() => {
       cueEl.style.display = 'none';
@@ -307,12 +321,12 @@
     startTime = performance.now();
     const handle = resp => recordResponse(resp);
     window.onkeydown = e => {
-      if (e.key === 'ArrowLeft') handle('left');
+      if (e.key === 'ArrowLeft')  handle('left');
       if (e.key === 'ArrowRight') handle('right');
     };
-    leftBtn.onclick = () => handle('left');
-    rightBtn.onclick = () => handle('right');
-    leftBtn.ontouchstart = () => handle('left');
+    leftBtn.onclick   = () => handle('left');
+    rightBtn.onclick  = () => handle('right');
+    leftBtn.ontouchstart  = () => handle('left');
     rightBtn.ontouchstart = () => handle('right');
   }
 
@@ -321,7 +335,7 @@
     const trial = trials[trialIndex];
     const rt = performance.now() - startTime;
     const correct = response === trial.targetSide;
-    data.push({condition:trial.condition, rt, correct});
+    data.push({condition: trial.condition, rt, correct});
     hideAll();
     setTimeout(nextTrial, 500);
   }
@@ -346,6 +360,7 @@
       ctx.fillText(`${L}: RT ${avgRt} ms — ${pct}% (${corr.length}/${arr.length})`, 20, y);
       y += 40;
     });
+
     fixationEl.innerHTML = `<h2>${t.resultsTitle}</h2>` +
       order.map(cond => {
         const arr = data.filter(d=>d.condition===cond);
@@ -362,10 +377,9 @@
       `<p>${t.download}</p>`;
     fixationEl.style.display = 'block';
 
-  // Al final de showResults(), después de generar el dataURL:
-  downloadLink.href = canvas.toDataURL('image/png');
-  downloadLink.download = `resultados_${pfInput.value}_${new Date().toLocaleDateString()}.png`;
-  downloadLink.style.display = 'block';
+    downloadLink.href = canvas.toDataURL('image/png');
+    downloadLink.download = `resultados_${pfInput.value}_${new Date().toLocaleDateString()}.png`;
+    downloadLink.style.display = 'block';
   }
 
   function hideAll() {
