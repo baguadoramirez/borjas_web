@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movimiento de Segundo Orden: Cuadrado Pre-creado</title>
+    
+    <!-- WebGazer.js -->
+    <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
+    
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -141,6 +145,17 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+
+            // === WebGazer setup ===
+            webgazer.setGazeListener((data, timestamp) => {
+                if (data) {
+                    console.log(`Mirada detectada en X=${Math.round(data.x)}, Y=${Math.round(data.y)}`);
+                }
+            }).begin()
+              .showVideoPreview(false)
+              .showPredictionPoints(true)
+              .showFaceOverlay(false);
+
             const canvas = document.getElementById('secondOrderNoiseMotionCanvas');
             const ctx = canvas.getContext('2d');
             const speedSlider = document.getElementById('speedSlider');
@@ -170,7 +185,7 @@
             let lastTime = performance.now();
 
             let backgroundNoiseImageData;
-            let preCreatedSquareImageData; // ImageData para el cuadrado pre-creado
+            let preCreatedSquareImageData;
 
             function generateStaticNoise(width, height) {
                 const imageData = ctx.createImageData(width, height);
@@ -185,7 +200,6 @@
                 return imageData;
             }
 
-            // Función para aplicar la inversión de contraste a un ImageData existente
             function applyContrastInversion(imageData, strength) {
                 const data = imageData.data;
                 const middleGray = 127.5;
@@ -218,13 +232,7 @@
                 objectX = Math.floor((canvasCSSWidth - squareSize) / 2);
 
                 backgroundNoiseImageData = generateStaticNoise(canvas.width, canvas.height);
-                
-                // Pre-crear el ImageData para el cuadrado
                 preCreatedSquareImageData = generateStaticNoise(squareSize * dpr, squareSize * dpr);
-                // NOTA: La inversión de contraste se aplicará en el draw()
-                // para que el slider de contraste funcione dinámicamente.
-                // Si quisieras que el contraste sea fijo, lo aplicarías aquí una vez.
-
                 draw();
             }
 
@@ -250,12 +258,9 @@
             function draw() {
                 ctx.putImageData(backgroundNoiseImageData, 0, 0);
 
-                // Crear una copia del ImageData pre-creado para poder manipularlo
-                // sin alterar el original, permitiendo cambios dinámicos de contraste.
                 const currentSquareImageData = ctx.createImageData(preCreatedSquareImageData.width, preCreatedSquareImageData.height);
-                currentSquareImageData.data.set(preCreatedSquareImageData.data); // Copiar los datos de píxel
+                currentSquareImageData.data.set(preCreatedSquareImageData.data);
 
-                // Aplicar la inversión de contraste a la copia
                 applyContrastInversion(currentSquareImageData, contrastInversionStrength);
                 
                 ctx.putImageData(currentSquareImageData, Math.floor(objectX * dpr), Math.floor(objectY * dpr));
