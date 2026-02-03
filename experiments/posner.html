@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Experimento de Posner - Tactil</title>
+  <link rel="stylesheet" href="experiment.css">
+  <style>
+    #experimentStage { background: #000; }
+
+    #fixation, #cue, #target-left, #target-right {
+      display: none;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      text-align: center;
+      color: #fff;
+    }
+
+    #fixation, #cue {
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 100px;
+    }
+
+    #target-left, #target-right {
+      font-size: 150px;
+      top: 50%;
+      position: absolute;
+      transform: translateY(-50%);
+    }
+
+    #target-left { left: 15%; }
+    #target-right { right: 15%; }
+
+    #response-buttons {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 22%;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .button-area {
+      width: 40%;
+      height: 100%;
+      background-color: #8b0000;
+      opacity: 0.85;
+      margin: 0 5%;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .button-area:active { opacity: 1; }
+  </style>
+</head>
+<body class="experiment-page">
+  <div class="experiment-shell">
+    <section id="setup" class="panel">
+      <h1>Experimento de Posner (tactil)</h1>
+      <p>Tarea de atencion espacial con senales validas, neutras e invalidas.</p>
+
+      <h2>Informacion del participante</h2>
+      <div class="form-grid">
+        <label>ID participante
+          <input id="participantId" type="text" autocomplete="off">
+        </label>
+        <label>Edad
+          <input id="participantAge" type="number" min="0" inputmode="numeric">
+        </label>
+        <label>Sexo
+          <select id="participantSex">
+            <option value="">Selecciona</option>
+            <option>Femenino</option>
+            <option>Masculino</option>
+            <option>Otro</option>
+            <option>Prefiero no decirlo</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="continueButton" type="button">Continuar</button>
+      </div>
+    </section>
+
+    <section id="preInstructions" class="panel intermediate-panel hidden">
+      <p class="intermediate-message">A continuacion apareceran las instrucciones. Leelas con atencion antes de empezar.</p>
+      <div class="button-row">
+        <button id="showInstructionsButton" type="button">Ver instrucciones</button>
+      </div>
+    </section>
+
+    <section id="instructions" class="panel hidden">
+      <h2>Instrucciones</h2>
+      <ol>
+        <li>Fija la mirada en la cruz central (+) durante todo el ensayo.</li>
+        <li>Una flecha puede indicar el lado donde podria aparecer el punto.</li>
+        <li>Cuando aparezca el punto, responde lo mas rapido posible.</li>
+        <li>Usa flechas del teclado o toca el area roja correspondiente.</li>
+      </ol>
+      <p class="helper-text">Asegurate de estar en pantalla completa para mayor precision.</p>
+      <div class="button-row">
+        <button id="startButton" type="button">Comenzar experimento</button>
+      </div>
+    </section>
+
+    <section id="experimentStage" class="experiment-stage">
+      <div id="trialCounter">0/0</div>
+      <div id="fixation">+</div>
+      <div id="cue"></div>
+      <div id="target-left">●</div>
+      <div id="target-right">●</div>
+      <div id="response-buttons">
+        <div id="left-button" class="button-area"></div>
+        <div id="right-button" class="button-area"></div>
+      </div>
+    </section>
+
+    <section id="results" class="results-panel hidden">
+      <h2>Resultados</h2>
+      <div id="resultsSummary"></div>
+      <div class="button-row">
+        <button id="downloadCsv" type="button">Descargar CSV</button>
+      </div>
+      <div class="graph-wrap">
+        <canvas id="resultsCanvas" width="700" height="420"></canvas>
+      </div>
+    </section>
+  </div>
+
+<script>
+  const fixationEl = document.getElementById('fixation');
+  const cueEl = document.getElementById('cue');
+  const leftT = document.getElementById('target-left');
+  const rightT = document.getElementById('target-right');
+  const respBtns = document.getElementById('response-buttons');
+  const leftBtn = document.getElementById('left-button');
+  const rightBtn = document.getElementById('right-button');
+  const trialCounter = document.getElementById('trialCounter');
+  const setupPanel = document.getElementById('setup');
+  const preInstructionsPanel = document.getElementById('preInstructions');
+  const instructionsPanel = document.getElementById('instructions');
+  const experimentStage = document.getElementById('experimentStage');
+  const resultsPanel = document.getElementById('results');
+  const resultsSummary = document.getElementById('resultsSummary');
+  const canvas = document.getElementById('resultsCanvas');
+  const startButton = document.getElementById('startButton');
+  const continueButton = document.getElementById('continueButton');
+  const showInstructionsButton = document.getElementById('showInstructionsButton');
+  const downloadButton = document.getElementById('downloadCsv');
+
+  const numTrials = 100;
+  const propValid = 1 / 3;
+  const propNeutral = 1 / 3;
+  const propInvalid = 1 / 3;
+  const fixationTime = 500;
+  const cueTime = 200;
+  const soa = 100;
+
+  let trials = [];
+  let trialIndex = -1;
+  let startTime = 0;
+  let data = [];
+  let participant = { id: '', age: 0, sex: '' };
+
+  function validateParticipant() {
+    const id = document.getElementById('participantId').value.trim();
+    const age = document.getElementById('participantAge').value;
+    const sex = document.getElementById('participantSex').value;
+    if (!id || !age || !sex) {
+      alert('Completa ID, edad y sexo para continuar.');
+      return null;
+    }
+    return { id, age: Number(age), sex };
+  }
+
+  function buildTrials() {
+    trials = [];
+    for (let i = 0; i < numTrials; i++) {
+      const r = Math.random();
+      const condition = r < propValid ? 'valid' : r < propValid + propNeutral ? 'neutral' : 'invalid';
+      const cueSide = condition === 'neutral' ? 'neutral' : (Math.random() < 0.5 ? 'left' : 'right');
+      let targetSide;
+      if (condition === 'valid') targetSide = cueSide;
+      else if (condition === 'invalid') targetSide = cueSide === 'left' ? 'right' : 'left';
+      else targetSide = Math.random() < 0.5 ? 'left' : 'right';
+      trials.push({ condition, cueSide, targetSide });
+    }
+    trials.sort(() => Math.random() - 0.5);
+  }
+
+  function startExperiment() {
+    if (!participant.id) {
+      const info = validateParticipant();
+      if (!info) return;
+      participant = info;
+    }
+    setupPanel.classList.add('hidden');
+    preInstructionsPanel.classList.add('hidden');
+    instructionsPanel.classList.add('hidden');
+    experimentStage.classList.add('active');
+    trialCounter.style.display = 'block';
+    trialIndex = -1;
+    data = [];
+    buildTrials();
+    const rfs = document.documentElement.requestFullscreen ||
+      document.documentElement.webkitRequestFullscreen ||
+      document.documentElement.mozRequestFullScreen ||
+      document.documentElement.msRequestFullscreen;
+    if (rfs) rfs.call(document.documentElement);
+    nextTrial();
+  }
+
+  function goToPreInstructions() {
+    const info = validateParticipant();
+    if (!info) return;
+    participant = info;
+    setupPanel.classList.add('hidden');
+    preInstructionsPanel.classList.remove('hidden');
+    const rfs = document.documentElement.requestFullscreen ||
+      document.documentElement.webkitRequestFullscreen ||
+      document.documentElement.mozRequestFullScreen ||
+      document.documentElement.msRequestFullscreen;
+    if (rfs) rfs.call(document.documentElement);
+  }
+
+  function showInstructions() {
+    preInstructionsPanel.classList.add('hidden');
+    instructionsPanel.classList.remove('hidden');
+  }
+
+  continueButton.addEventListener('click', goToPreInstructions);
+  showInstructionsButton.addEventListener('click', showInstructions);
+  startButton.addEventListener('click', startExperiment);
+  downloadButton.addEventListener('click', downloadCSV);
+
+  function nextTrial() {
+    trialIndex++;
+    if (trialIndex >= trials.length) return showResults();
+    trialCounter.textContent = `${trialIndex + 1}/${trials.length}`;
+    hideAll();
+    fixationEl.style.display = 'block';
+    setTimeout(() => showCue(trials[trialIndex]), fixationTime);
+  }
+
+  function showCue(trial) {
+    fixationEl.style.display = 'none';
+    cueEl.textContent = trial.cueSide === 'left' ? '◀' : trial.cueSide === 'right' ? '▶' : '+';
+    cueEl.style.display = 'block';
+    setTimeout(() => {
+      cueEl.style.display = 'none';
+      setTimeout(() => showTarget(trial), soa);
+    }, cueTime);
+  }
+
+  function showTarget(trial) {
+    (trial.targetSide === 'left' ? leftT : rightT).style.display = 'block';
+    respBtns.style.display = 'flex';
+    startTime = performance.now();
+    const handle = resp => recordResponse(resp, trial);
+    window.onkeydown = e => {
+      if (e.key === 'ArrowLeft') handle('left');
+      if (e.key === 'ArrowRight') handle('right');
+    };
+    leftBtn.onclick = () => handle('left');
+    rightBtn.onclick = () => handle('right');
+    leftBtn.ontouchstart = () => handle('left');
+    rightBtn.ontouchstart = () => handle('right');
+  }
+
+  function recordResponse(response, trial) {
+    window.onkeydown = null;
+    const rt = performance.now() - startTime;
+    const correct = response === trial.targetSide;
+    data.push({
+      participant_id: participant.id,
+      age: participant.age,
+      sex: participant.sex,
+      trial: trialIndex + 1,
+      condition: trial.condition,
+      cue_side: trial.cueSide,
+      target_side: trial.targetSide,
+      response,
+      rt: Math.round(rt),
+      correct: correct ? 1 : 0
+    });
+    hideAll();
+    setTimeout(nextTrial, 400);
+  }
+
+  function showResults() {
+    hideAll();
+    trialCounter.style.display = 'none';
+    experimentStage.classList.remove('active');
+    resultsPanel.classList.remove('hidden');
+
+    const summaryLines = [];
+    const stats = ['valid', 'neutral', 'invalid'].map(cond => {
+      const arr = data.filter(d => d.condition === cond);
+      const corr = arr.filter(d => d.correct === 1);
+      const avgRt = corr.length ? (corr.reduce((s, d) => s + d.rt, 0) / corr.length).toFixed(1) : 'N/A';
+      const pct = arr.length ? ((corr.length / arr.length) * 100).toFixed(1) : 'N/A';
+      summaryLines.push(`<p><strong>${cond}</strong>: RT ${avgRt} ms — ${pct}% aciertos</p>`);
+      return { cond, avgRt: Number(avgRt), pct: Number(pct) };
+    });
+
+    resultsSummary.innerHTML = summaryLines.join('');
+    drawResultsChart(stats);
+  }
+
+  function drawResultsChart(stats) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const maxRt = Math.max(...stats.map(s => s.avgRt || 0), 1);
+    const chartTop = 40;
+    const chartBottom = 320;
+    const chartHeight = chartBottom - chartTop;
+    const barWidth = 120;
+    const gap = 80;
+    const startX = 80;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#111111';
+    ctx.font = '16px Arial';
+    ctx.fillText('Tiempo medio de respuesta (ms)', 20, 24);
+
+    stats.forEach((s, i) => {
+      const x = startX + i * (barWidth + gap);
+      const barHeight = (s.avgRt / maxRt) * chartHeight;
+      ctx.fillStyle = '#4aa3ff';
+      ctx.fillRect(x, chartBottom - barHeight, barWidth, barHeight);
+      ctx.fillStyle = '#111111';
+      ctx.fillText(s.cond, x + 10, chartBottom + 24);
+      ctx.fillText(`${s.avgRt || 0} ms`, x + 10, chartBottom - barHeight - 10);
+      ctx.fillText(`${isNaN(s.pct) ? '0' : s.pct}% aciertos`, x + 10, chartBottom + 46);
+    });
+
+    ctx.strokeStyle = '#111111';
+    ctx.beginPath();
+    ctx.moveTo(60, chartTop);
+    ctx.lineTo(60, chartBottom);
+    ctx.lineTo(canvas.width - 40, chartBottom);
+    ctx.stroke();
+  }
+
+  function downloadCSV() {
+    const header = "participant_id,age,sex,trial,condition,cue_side,target_side,response,rt,correct\n";
+    const body = data.map(r =>
+      `${r.participant_id},${r.age},${r.sex},${r.trial},${r.condition},${r.cue_side},${r.target_side},${r.response},${r.rt},${r.correct}`
+    ).join("\n");
+    const blob = new Blob([header + body], { type: 'text/csv' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'posner_results.csv';
+    link.click();
+  }
+
+  function hideAll() {
+    [fixationEl, cueEl, leftT, rightT, respBtns].forEach(el => el.style.display = 'none');
+  }
+</script>
+</body>
+</html>

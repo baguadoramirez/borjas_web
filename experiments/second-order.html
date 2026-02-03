@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es" data-root="..">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movimiento de Segundo Orden</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script defer src="../shared/include.js"></script>
+  <style>
+    .info-card {
+      border: 1px solid var(--border);
+      background: var(--card);
+      padding: 18px;
+      border-radius: 12px;
+    }
+
+    #noiseCanvas {
+      width: 100%;
+      max-width: 900px;
+      aspect-ratio: 5 / 2;
+      background: #f2f2f2;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: block;
+      margin: 12px auto 8px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .info-list {
+      margin: 0.5rem 0 0 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <section class="page-intro">
+      <h1>Movimiento de Segundo Orden</h1>
+      <p>Esta página explica el movimiento de segundo orden, un fenómeno de percepción visual en el que detectamos movimiento sin un borde de luminancia definido.</p>
+      <p>En lugar de cambiar la luz de un contorno, lo que cambia es la textura interna del objeto respecto al fondo.</p>
+      <p>La demo de abajo permite observar cómo el sistema visual usa ese cambio de textura para percibir desplazamiento.</p>
+    </section>
+
+    <section class="content-section info-card">
+      <h2>Demo interactiva</h2>
+      <p>El fondo es ruido estático y el cuadrado es otro parche de ruido que se desplaza.</p>
+      <p>Cuando el cuadrado se mueve, la textura cambia de posición pero el brillo medio no define un borde visible.</p>
+      <p>Aun así, el movimiento se percibe porque el sistema visual sigue el desplazamiento del patrón interno.</p>
+      <canvas id="noiseCanvas"></canvas>
+      <p class="hint">El cuadrado se mueve durante 2 segundos y se detiene otros 2 segundos de forma c&iacute;clica.</p>
+    </section>
+
+    <section class="content-section info-card">
+      <h2>Que observar</h2>
+      <ul class="info-list">
+        <li>El cuadrado no se define por un borde brillante, sino por la organizacion del ruido.</li>
+        <li>El movimiento se hace visible al comparar la textura del parche con la del fondo.</li>
+        <li>En fases de pausa, el parche sigue siendo perceptible aunque no haya desplazamiento.</li>
+      </ul>
+      <p>Este efecto muestra que la percepcion del movimiento no depende solo de cambios de luminancia, sino tambien de cambios en la estructura de la escena.</p>
+      <p>En psicofisica se usa para estudiar como el sistema visual integra informacion de textura y movimiento en ausencia de contornos claros.</p>
+    </section>
+  </main>
+  <div id="site-footer"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById('noiseCanvas');
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      let animationFrameId = null;
+
+      const squareSizeRatio = 0.2;
+      let squareSize = 0;
+      let objectX = 0;
+      let objectY = 0;
+
+      const speed = 2.0;
+
+      let lastTime = performance.now();
+      let lastCycleIndex = -1;
+      let currentDirection = 1;
+
+      let backgroundNoise;
+      let squareNoise;
+
+      function generateNoise(width, height) {
+        const imageData = ctx.createImageData(width, height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const value = Math.random() * 255;
+          data[i] = value;
+          data[i + 1] = value;
+          data[i + 2] = value;
+          data[i + 3] = 255;
+        }
+        return imageData;
+      }
+
+      function setup() {
+        const cssWidth = canvas.clientWidth;
+        const cssHeight = canvas.clientHeight;
+        canvas.width = Math.floor(cssWidth * dpr);
+        canvas.height = Math.floor(cssHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        squareSize = Math.floor(cssWidth * squareSizeRatio);
+        if (squareSize > cssHeight) {
+          squareSize = Math.floor(cssHeight * 0.8);
+        }
+
+        objectY = Math.floor((cssHeight - squareSize) / 2);
+        objectX = Math.floor((cssWidth - squareSize) / 2);
+
+        backgroundNoise = generateNoise(canvas.width, canvas.height);
+        squareNoise = generateNoise(squareSize * dpr, squareSize * dpr);
+        drawFrame();
+      }
+
+      function drawFrame() {
+        ctx.putImageData(backgroundNoise, 0, 0);
+        const currentSquare = ctx.createImageData(squareNoise.width, squareNoise.height);
+        currentSquare.data.set(squareNoise.data);
+        ctx.putImageData(currentSquare, Math.floor(objectX * dpr), Math.floor(objectY * dpr));
+      }
+
+      function animate(time) {
+        const deltaTime = (time - lastTime) / 1000;
+        lastTime = time;
+
+        const cycleDuration = 4000;
+        const moveDuration = 2000;
+        const cycleIndex = Math.floor(time / cycleDuration);
+        const cyclePhase = time % cycleDuration;
+        const isMoving = cyclePhase < moveDuration;
+
+        if (cycleIndex !== lastCycleIndex && isMoving) {
+          currentDirection = cycleIndex % 2 === 0 ? 1 : -1;
+          lastCycleIndex = cycleIndex;
+        }
+
+        if (isMoving) {
+          const logicalWidth = canvas.width / dpr;
+          objectX += speed * deltaTime * 60 * currentDirection;
+          if (objectX > logicalWidth) {
+            objectX = -squareSize;
+          } else if (objectX < -squareSize) {
+            objectX = logicalWidth;
+          }
+        }
+        drawFrame();
+
+        animationFrameId = requestAnimationFrame(animate);
+      }
+
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(setup, 200);
+      });
+
+      setup();
+      animate(performance.now());
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coherencia de Movimiento (RDM)</title>
+  <link rel="stylesheet" href="experiment.css">
+  <style>
+    #experimentStage { background: #000; display: none; }
+    #experimentStage.active { display: block; }
+    #rdmCanvas { position: absolute; inset: 0; width: 100%; height: 100%; background: #000; }
+    #fixation {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      color: #fff; font-size: 48px; font-weight: 700; pointer-events: none;
+    }
+    #responseHint {
+      position: absolute; bottom: 7vh; width: 100%; text-align: center;
+      color: #e4e4e4; font-size: 1.1rem;
+    }
+    .kbd {
+      display: inline-block; border: 1px solid #666; border-bottom-width: 2px; border-radius: 6px;
+      padding: 2px 8px; margin: 0 2px; background: #101010; color: #fff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em;
+    }
+  </style>
+</head>
+<body class="experiment-page">
+  <div class="experiment-shell">
+    <section id="setup" class="panel">
+      <h1>Coherencia de Movimiento (RDM)</h1>
+      <p>Tarea adaptativa de puntos en movimiento para estimar el umbral de coherencia.</p>
+      <h2>Participante</h2>
+      <div class="form-grid">
+        <label>ID participante<input id="participantId" type="text" autocomplete="off"></label>
+        <label>Edad<input id="participantAge" type="number" min="0" inputmode="numeric"></label>
+        <label>Sexo
+          <select id="participantSex">
+            <option value="">Selecciona</option>
+            <option>Femenino</option>
+            <option>Masculino</option>
+            <option>Otro</option>
+            <option>Prefiero no decirlo</option>
+          </select>
+        </label>
+        <label>Ensayos principales<input id="numTrials" type="number" min="20" max="200" step="1" value="60"></label>
+      </div>
+      <p class="helper-text">Secuencia: 5 ensayos de practica al 80%, luego bloque adaptativo iniciando al 60% de coherencia.</p>
+      <div class="button-row"><button id="continueButton" type="button">Continuar</button></div>
+    </section>
+
+    <section id="instructions" class="panel hidden">
+      <h2>Instrucciones (para nino/a)</h2>
+      <ol>
+        <li>Mira la cruz del centro.</li>
+        <li>Apareceran muchos puntitos.</li>
+        <li>Di hacia donde van mas: izquierda o derecha.</li>
+        <li>Pulsa <span class="kbd">Flecha Izquierda</span> o <span class="kbd">Flecha Derecha</span>.</li>
+      </ol>
+      <div class="button-row"><button id="startButton" type="button">Comenzar practica</button></div>
+    </section>
+
+    <section id="practiceDone" class="panel intermediate-panel hidden">
+      <p class="intermediate-message">Practica completada. Inicia el bloque principal cuando quieras.</p>
+      <div class="button-row"><button id="startMainButton" type="button">Comenzar bloque principal</button></div>
+    </section>
+
+    <section id="experimentStage" class="experiment-stage">
+      <canvas id="rdmCanvas"></canvas>
+      <div id="trialCounter">0/0</div>
+      <div id="fixation">+</div>
+      <div id="responseHint"></div>
+    </section>
+
+    <section id="results" class="results-panel hidden">
+      <h2>Resultados</h2>
+      <div id="resultsSummary"></div>
+      <div class="graph-wrap"><canvas id="coherenceCanvas" width="820" height="360"></canvas></div>
+      <div class="button-row"><button id="downloadCsv" type="button">Descargar CSV</button></div>
+    </section>
+  </div>
+
+  <script>
+    const setupPanel = document.getElementById("setup");
+    const instructionsPanel = document.getElementById("instructions");
+    const practiceDonePanel = document.getElementById("practiceDone");
+    const experimentStage = document.getElementById("experimentStage");
+    const resultsPanel = document.getElementById("results");
+    const resultsSummary = document.getElementById("resultsSummary");
+    const coherenceCanvas = document.getElementById("coherenceCanvas");
+    const coherenceCtx = coherenceCanvas.getContext("2d");
+    const trialCounter = document.getElementById("trialCounter");
+    const responseHint = document.getElementById("responseHint");
+    const canvas = document.getElementById("rdmCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const settings = {
+      fixationMs: 500,
+      stimulusMs: 900,
+      responseMs: 2000,
+      numDots: 260,
+      dotRadiusPx: 2,
+      dotSpeedPx: 3,
+      dotLifeMs: 100,
+      apertureRadiusPx: 220,
+      practiceTrials: 5,
+      practiceCoherence: 0.8,
+      mainStartCoherence: 0.6
+    };
+
+    let participant = { id: "", age: "", sex: "" };
+    let numTrials = 60, trialIndex = 0, practiceIndex = 0;
+    let isPractice = false, coherence = settings.mainStartCoherence;
+    let staircaseStep = 0.1, correctStreak = 0, previousDirection = 0;
+    let reversals = [], data = [], dots = [];
+    let trialDirection = 1, trialCoherence = coherence;
+    let responseDeadline = 0, responseStart = 0, responseCaptured = false;
+    let stimulusRunning = false, animationFrame = null;
+    let apertureRadius = settings.apertureRadiusPx, estimatedFrameMs = 1000 / 60;
+
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+    function dotMinLifeFrames() { return Math.max(1, Math.ceil(settings.dotLifeMs / estimatedFrameMs)); }
+    function randomDotInCircle() {
+      const ang = Math.random() * Math.PI * 2;
+      const r = Math.sqrt(Math.random()) * apertureRadius;
+      const minLifeFrames = dotMinLifeFrames();
+      return { x: Math.cos(ang) * r, y: Math.sin(ang) * r, lifeMs: Math.random() * settings.dotLifeMs, lifeFrames: Math.floor(Math.random() * minLifeFrames), minLifeFrames, coherent: false };
+    }
+    function createDots() { dots = Array.from({ length: settings.numDots }, randomDotInCircle); }
+    function assignCoherentDots(coh) {
+      const n = Math.round(settings.numDots * coh);
+      const idx = Array.from({ length: settings.numDots }, (_, i) => i);
+      for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+      dots.forEach(d => d.coherent = false);
+      for (let i = 0; i < n; i++) dots[idx[i]].coherent = true;
+    }
+    function resizeCanvas() {
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      apertureRadius = Math.min(settings.apertureRadiusPx, Math.min(canvas.width, canvas.height) * 0.35);
+    }
+    function updateDots(deltaMs) {
+      const dx = trialDirection * settings.dotSpeedPx;
+      for (const dot of dots) {
+        if (dot.coherent) dot.x += dx;
+        else { const a = Math.random() * Math.PI * 2; dot.x += Math.cos(a) * settings.dotSpeedPx; dot.y += Math.sin(a) * settings.dotSpeedPx; }
+        dot.lifeMs += deltaMs; dot.lifeFrames += 1;
+        const outside = dot.x * dot.x + dot.y * dot.y > apertureRadius * apertureRadius;
+        if (outside || (dot.lifeMs >= settings.dotLifeMs && dot.lifeFrames >= dot.minLifeFrames)) {
+          const repl = randomDotInCircle();
+          dot.x = repl.x; dot.y = repl.y; dot.lifeMs = repl.lifeMs; dot.lifeFrames = repl.lifeFrames; dot.minLifeFrames = repl.minLifeFrames;
+        }
+      }
+    }
+    function drawDots() {
+      const cx = canvas.width / 2, cy = canvas.height / 2;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#fff";
+      for (const dot of dots) { ctx.beginPath(); ctx.arc(cx + dot.x, cy + dot.y, settings.dotRadiusPx, 0, Math.PI * 2); ctx.fill(); }
+    }
+    function runStimulus(ms) {
+      const t0 = performance.now(); let prev = t0; stimulusRunning = true; responseHint.textContent = "";
+      function frame(now) {
+        if (!stimulusRunning) return;
+        const raw = now - prev; const deltaMs = Math.min(50, raw); prev = now;
+        estimatedFrameMs = clamp(0.9 * estimatedFrameMs + 0.1 * raw, 5, 100);
+        updateDots(deltaMs); drawDots();
+        if (now - t0 < ms) animationFrame = requestAnimationFrame(frame); else { stimulusRunning = false; responseWindow(); }
+      }
+      animationFrame = requestAnimationFrame(frame);
+    }
+    function stopStimulus() { stimulusRunning = false; if (animationFrame) cancelAnimationFrame(animationFrame); animationFrame = null; ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    function adjustStaircase(correct) {
+      let dir = 0;
+      if (correct) { correctStreak += 1; if (correctStreak >= 2) { coherence -= staircaseStep; correctStreak = 0; dir = -1; } }
+      else { coherence += staircaseStep; correctStreak = 0; dir = 1; }
+      coherence = clamp(coherence, 0.02, 1);
+      if (dir !== 0 && previousDirection !== 0 && dir !== previousDirection) {
+        reversals.push(coherence);
+        if (reversals.length >= 8) staircaseStep = 0.02; else if (reversals.length >= 4) staircaseStep = 0.05;
+      }
+      if (dir !== 0) previousDirection = dir;
+    }
+    function validateForm() {
+      const id = document.getElementById("participantId").value.trim();
+      const age = document.getElementById("participantAge").value.trim();
+      const sex = document.getElementById("participantSex").value;
+      const nt = Number(document.getElementById("numTrials").value);
+      if (!id || !age || !sex || !Number.isFinite(nt)) { alert("Completa los datos del participante y el numero de ensayos."); return false; }
+      participant = { id, age, sex }; numTrials = clamp(Math.round(nt), 20, 200); return true;
+    }
+
+    function showInstructions() { if (!validateForm()) return; setupPanel.classList.add("hidden"); instructionsPanel.classList.remove("hidden"); }
+    function startPractice() {
+      instructionsPanel.classList.add("hidden"); practiceDonePanel.classList.add("hidden"); resultsPanel.classList.add("hidden");
+      experimentStage.classList.add("active"); isPractice = true; practiceIndex = 0;
+      if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+      nextTrial();
+    }
+    function startMainExperiment() {
+      practiceDonePanel.classList.add("hidden"); resultsPanel.classList.add("hidden");
+      experimentStage.classList.add("active"); isPractice = false; trialIndex = 0; data = [];
+      reversals = []; staircaseStep = 0.1; previousDirection = 0; correctStreak = 0; coherence = settings.mainStartCoherence;
+      nextTrial();
+    }
+    function nextTrial() {
+      if (isPractice && practiceIndex >= settings.practiceTrials) { endPractice(); return; }
+      if (!isPractice && trialIndex >= numTrials) { finishExperiment(); return; }
+      trialCounter.textContent = isPractice ? `Practica ${practiceIndex + 1}/${settings.practiceTrials}` : `${trialIndex + 1}/${numTrials}`;
+      responseHint.textContent = isPractice ? "Ensayo de practica" : "";
+      responseCaptured = false; trialDirection = Math.random() < 0.5 ? -1 : 1;
+      trialCoherence = isPractice ? settings.practiceCoherence : coherence;
+      createDots(); assignCoherentDots(trialCoherence); stopStimulus();
+      setTimeout(() => runStimulus(settings.stimulusMs), settings.fixationMs);
+    }
+    function endPractice() { stopStimulus(); experimentStage.classList.remove("active"); practiceDonePanel.classList.remove("hidden"); }
+    function responseWindow() {
+      responseHint.innerHTML = `${isPractice ? "Practica: " : ""}Direccion: <span class="kbd">←</span> izquierda o <span class="kbd">→</span> derecha`;
+      responseStart = performance.now(); responseDeadline = responseStart + settings.responseMs;
+      const timer = setInterval(() => {
+        if (responseCaptured) { clearInterval(timer); return; }
+        if (performance.now() > responseDeadline) { clearInterval(timer); saveResponse(null, null, true); }
+      }, 16);
+    }
+    function saveResponse(key, rt, timeout) {
+      responseCaptured = true;
+      const ans = key === "ArrowLeft" ? -1 : key === "ArrowRight" ? 1 : 0;
+      const isCorrect = timeout ? false : ans === trialDirection;
+      if (!isPractice) adjustStaircase(isCorrect);
+      if (isPractice) { practiceIndex += 1; setTimeout(nextTrial, 300); return; }
+      data.push({
+        trial: trialIndex + 1, direction: trialDirection === -1 ? "izquierda" : "derecha", coherence: trialCoherence,
+        response: ans === -1 ? "izquierda" : ans === 1 ? "derecha" : "sin_respuesta", correct: isCorrect ? 1 : 0,
+        rt_ms: rt ?? "", timeout: timeout ? 1 : 0, step: staircaseStep, reversals: reversals.length
+      });
+      trialIndex += 1; setTimeout(nextTrial, 350);
+    }
+    function finishExperiment() {
+      stopStimulus(); experimentStage.classList.remove("active"); resultsPanel.classList.remove("hidden");
+      const valid = data.filter(d => d.rt_ms !== "");
+      const acc = data.filter(d => d.correct === 1).length / data.length;
+      const meanRt = valid.length ? valid.reduce((a, d) => a + Number(d.rt_ms), 0) / valid.length : NaN;
+      const threshold = reversals.length ? reversals.reduce((a, b) => a + b, 0) / reversals.length : coherence;
+      resultsSummary.innerHTML = `
+        <p><strong>Participante:</strong> ${participant.id}</p>
+        <p><strong>Exactitud:</strong> ${(acc * 100).toFixed(1)}%</p>
+        <p><strong>TR medio:</strong> ${Number.isFinite(meanRt) ? meanRt.toFixed(0) + " ms" : "n/d"}</p>
+        <p><strong>Reversiones:</strong> ${reversals.length}</p>
+        <p><strong>Umbral estimado:</strong> ${(threshold * 100).toFixed(1)}%</p>`;
+      drawChart(threshold);
+    }
+    function drawChart(threshold) {
+      const c = coherenceCtx, w = coherenceCanvas.width, h = coherenceCanvas.height;
+      const pad = { left: 92, right: 20, top: 24, bottom: 50 }, plotW = w - pad.left - pad.right, plotH = h - pad.top - pad.bottom;
+      c.clearRect(0, 0, w, h); c.fillStyle = "#fff"; c.fillRect(0, 0, w, h); if (!data.length) return;
+      const xAt = t => pad.left + ((t - 1) / Math.max(1, data.length - 1)) * plotW, yAt = v => pad.top + (1 - v / 100) * plotH;
+      c.strokeStyle = "#d0d0d0"; for (let v = 0; v <= 100; v += 20) { const y = yAt(v); c.beginPath(); c.moveTo(pad.left, y); c.lineTo(w - pad.right, y); c.stroke(); }
+      c.strokeStyle = "#222"; c.lineWidth = 1.6; c.beginPath(); c.moveTo(pad.left, pad.top); c.lineTo(pad.left, h - pad.bottom); c.lineTo(w - pad.right, h - pad.bottom); c.stroke();
+      const thY = yAt(threshold * 100); c.setLineDash([8, 6]); c.strokeStyle = "#1f6feb"; c.lineWidth = 2; c.beginPath(); c.moveTo(pad.left, thY); c.lineTo(w - pad.right, thY); c.stroke(); c.setLineDash([]);
+      c.fillStyle = "#1f6feb"; c.font = "12px Arial, sans-serif"; c.fillText(`Umbral: ${(threshold * 100).toFixed(1)}%`, pad.left + 8, thY - 8);
+      c.strokeStyle = "#333"; c.lineWidth = 1.8; c.beginPath();
+      data.forEach((d, i) => { const x = xAt(i + 1), y = yAt(d.coherence * 100); if (i === 0) c.moveTo(x, y); else c.lineTo(x, y); }); c.stroke();
+      data.forEach((d, i) => { const x = xAt(i + 1), y = yAt(d.coherence * 100); c.beginPath(); c.fillStyle = d.correct ? "#12a150" : "#d92d20"; c.arc(x, y, 3.2, 0, Math.PI * 2); c.fill(); });
+      c.fillStyle = "#111"; c.font = "12px Arial, sans-serif"; for (let v = 0; v <= 100; v += 20) c.fillText(`${v}%`, 44, yAt(v) + 4);
+    }
+    function csvText() {
+      const h = ["participant_id","age","sex","trial","direction","coherence","response","correct","rt_ms","timeout","step","reversals"];
+      const rows = data.map(d => [participant.id, participant.age, participant.sex, d.trial, d.direction, d.coherence.toFixed(4), d.response, d.correct, d.rt_ms, d.timeout, d.step.toFixed(4), d.reversals]);
+      return [h, ...rows].map(r => r.join(",")).join("\n");
+    }
+    function downloadCsv() {
+      const blob = new Blob([csvText()], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob); const a = document.createElement("a");
+      a.href = url; a.download = `rdm_${participant.id || "anonimo"}_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    document.addEventListener("keydown", e => {
+      if (!experimentStage.classList.contains("active") || responseCaptured) return;
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      if (performance.now() > responseDeadline) return;
+      saveResponse(e.key, Math.round(performance.now() - responseStart), false);
+    });
+    document.getElementById("continueButton").addEventListener("click", showInstructions);
+    document.getElementById("startButton").addEventListener("click", startPractice);
+    document.getElementById("startMainButton").addEventListener("click", startMainExperiment);
+    document.getElementById("downloadCsv").addEventListener("click", downloadCsv);
+    resizeCanvas();
+  </script>
+</body>
+</html>

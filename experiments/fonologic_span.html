@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Fonologic Span - Repeticion Directa</title>
+  <link rel="stylesheet" href="experiment.css">
+  <style>
+    #experimentStage {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+    }
+    #experimentStage.active {
+      display: flex;
+    }
+    #trialCounter {
+      display: none;
+    }
+    #signalIndicator {
+      position: fixed;
+      top: 64px;
+      left: 16px;
+      display: none;
+      align-items: center;
+      justify-content: flex-start;
+      flex-direction: column;
+      text-align: center;
+      color: #fff;
+      z-index: 1001;
+      pointer-events: none;
+    }
+    #signalIndicator.visible {
+      display: flex;
+    }
+    #signalIndicator img {
+      width: 132px;
+      height: 132px;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 22px rgba(0, 0, 0, 0.45));
+    }
+    #signalIndicator span {
+      margin-top: 0.4rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.9px;
+      max-width: 132px;
+      line-height: 1.1;
+      text-transform: uppercase;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+    }
+    #inputContainer {
+      background: rgba(0, 0, 0, 0.8);
+      padding: 2rem;
+      border-radius: 1rem;
+      max-width: 90vw;
+    }
+    #inputContainer input {
+      margin: 0.6rem 0;
+      padding: 0.8rem;
+      font-size: 1.2rem;
+      width: min(560px, 80vw);
+      text-align: center;
+      border: none;
+      border-radius: 0.5rem;
+      letter-spacing: 0.14rem;
+    }
+    #feedback {
+      font-size: 1.2rem;
+      margin-top: 1rem;
+      min-height: 1.4rem;
+    }
+    #ttsLoading {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.62);
+      z-index: 1100;
+      pointer-events: none;
+    }
+    #ttsLoading.visible {
+      display: flex;
+    }
+    .tts-card {
+      width: min(520px, 88vw);
+      padding: 1rem 1.2rem;
+      border-radius: 0.8rem;
+      background: rgba(22, 22, 22, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      text-align: left;
+    }
+    #ttsStatus {
+      margin: 0 0 0.55rem;
+      font-size: 0.95rem;
+    }
+    .tts-progress {
+      height: 10px;
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    #ttsProgressBar {
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #4aa3ff, #7ec1ff);
+      transition: width 180ms linear;
+    }
+    .lang-block {
+      display: none;
+      margin-bottom: 12px;
+    }
+    .lang-block.active {
+      display: block;
+    }
+  </style>
+</head>
+<body class="experiment-page">
+  <div class="experiment-shell">
+    <section id="setup" class="panel">
+      <h1>Fonologic Span (Repeticion directa)</h1>
+      <p>Prueba de memoria auditiva basada en secuencias de numeros.</p>
+
+      <h2>Informacion del participante</h2>
+      <div class="form-grid">
+        <label>ID participante
+          <input id="participantId" type="text" autocomplete="off">
+        </label>
+        <label>Edad
+          <input id="participantAge" type="number" min="0" inputmode="numeric">
+        </label>
+        <label>Sexo
+          <select id="participantSex">
+            <option value="">Selecciona</option>
+            <option>Femenino</option>
+            <option>Masculino</option>
+            <option>Otro</option>
+            <option>Prefiero no decirlo</option>
+          </select>
+        </label>
+        <label>Idioma
+          <select id="participantLang">
+            <option value="es">Castellano</option>
+            <option value="ca">Catalan</option>
+          </select>
+        </label>
+      </div>
+      <p class="helper-text">Activa el sonido y mantente en un lugar silencioso.</p>
+      <div class="button-row">
+        <button id="continueButton" type="button">Continuar</button>
+      </div>
+    </section>
+
+    <section id="preInstructions" class="panel intermediate-panel hidden">
+      <p class="intermediate-message">A continuacion apareceran las instrucciones. Leelas con atencion antes de empezar.</p>
+      <div class="button-row">
+        <button id="showInstructionsButton" type="button">Ver instrucciones</button>
+      </div>
+    </section>
+
+    <section id="instructions" class="panel hidden">
+      <h2>Instrucciones</h2>
+      <div class="lang-block active" data-lang="es">
+        <p>A continuacion, escucharas series de numeros que comenzaran despues de un sonido y acabaran antes de que se repita el mismo sonido.</p>
+        <p>Despues de escuchar el segundo sonido, escribe los mismos numeros en el mismo orden usando el teclado.</p>
+        <p>Mientras veas la senal STOP, todavia no respondas.</p>
+      </div>
+      <div class="lang-block" data-lang="ca">
+        <p>A continuacio, escoltaras series de numeros que començaran despres d'un so i acabaran abans que es repeteixi el mateix so.</p>
+        <p>Despres d'escoltar el segon so, escriu els mateixos numeros en el mateix ordre usant el teclat.</p>
+        <p>Mentre vegis el senyal STOP, encara no responguis.</p>
+      </div>
+      <div class="button-row">
+        <button id="startButton" type="button">Comenzar experimento</button>
+      </div>
+    </section>
+
+    <section id="experimentStage" class="experiment-stage">
+      <div id="trialCounter">Ensayo 0/14</div>
+      <div id="signalIndicator" class="signal-indicator" aria-live="polite">
+        <img src="../images/stop-sign.png" alt="Senal de STOP">
+        <span>No respondas todavia</span>
+      </div>
+      <div id="inputContainer" class="hidden">
+        <p id="responsePrompt">Escribe la secuencia y pulsa Enviar.</p>
+        <input id="responseInput" type="text" inputmode="numeric" autocomplete="off" maxlength="18">
+        <div class="button-row">
+          <button id="submitButton" type="button">Enviar respuesta</button>
+        </div>
+      </div>
+      <div id="ttsLoading" aria-live="polite">
+        <div class="tts-card">
+          <p id="ttsStatus">Preparando voz...</p>
+          <div class="tts-progress">
+            <div id="ttsProgressBar"></div>
+          </div>
+        </div>
+      </div>
+      <div id="feedback"></div>
+    </section>
+
+    <section id="results" class="results-panel hidden">
+      <h2>Resultados</h2>
+      <p id="resultsSummary"></p>
+      <div class="button-row">
+        <button id="downloadCsv" type="button">Descargar CSV</button>
+      </div>
+      <div class="graph-wrap" id="graph"></div>
+    </section>
+  </div>
+
+<script>
+const trialCounter = document.getElementById("trialCounter");
+const experimentStage = document.getElementById("experimentStage");
+const setupPanel = document.getElementById("setup");
+const preInstructionsPanel = document.getElementById("preInstructions");
+const instructionsPanel = document.getElementById("instructions");
+const inputContainer = document.getElementById("inputContainer");
+const feedbackEl = document.getElementById("feedback");
+const resultsPanel = document.getElementById("results");
+const resultsSummary = document.getElementById("resultsSummary");
+const graphWrap = document.getElementById("graph");
+const startButton = document.getElementById("startButton");
+const continueButton = document.getElementById("continueButton");
+const showInstructionsButton = document.getElementById("showInstructionsButton");
+const submitButton = document.getElementById("submitButton");
+const downloadCsvButton = document.getElementById("downloadCsv");
+const signalIndicator = document.getElementById("signalIndicator");
+const languageSelect = document.getElementById("participantLang");
+const langBlocks = document.querySelectorAll(".lang-block");
+const responsePrompt = document.getElementById("responsePrompt");
+const responseInput = document.getElementById("responseInput");
+const ttsLoading = document.getElementById("ttsLoading");
+const ttsStatus = document.getElementById("ttsStatus");
+const ttsProgressBar = document.getElementById("ttsProgressBar");
+
+let maxTrials = 14;
+let currentLength = 3;
+let trialCount = 0;
+let sequence = [];
+let results = [];
+let participant = { id: '', age: 0, sex: '', lang: 'es' };
+let trialStartTime = 0;
+let audioCtx = null;
+let trialsInSpan = 0;
+let spanCorrects = 0;
+let ttsPreparedLang = null;
+let ttsCatalanVoice = null;
+
+function validateParticipant() {
+  const id = document.getElementById("participantId").value.trim();
+  const age = document.getElementById("participantAge").value;
+  const sex = document.getElementById("participantSex").value;
+  const lang = languageSelect.value;
+  if (!id || !age || !sex || !lang) {
+    alert("Completa ID, edad, sexo e idioma para continuar.");
+    return null;
+  }
+  return { id, age: Number(age), sex, lang };
+}
+
+function startExperiment() {
+  if (!participant.id) {
+    const info = validateParticipant();
+    if (!info) return;
+    participant = info;
+    setLanguage(info.lang);
+  }
+  setupPanel.classList.add("hidden");
+  preInstructionsPanel.classList.add("hidden");
+  instructionsPanel.classList.add("hidden");
+  experimentStage.classList.add("active");
+  trialCounter.style.display = "block";
+  setSignalVisible(true);
+  prepareTTS(participant.lang).catch(() => {});
+  nextTrial();
+  enterFullscreen().catch(() => {});
+}
+
+function goToPreInstructions() {
+  const info = validateParticipant();
+  if (!info) return;
+  participant = info;
+  setLanguage(info.lang);
+  prepareTTS(info.lang).catch(() => {});
+  setupPanel.classList.add("hidden");
+  preInstructionsPanel.classList.remove("hidden");
+  const rfs = document.documentElement.requestFullscreen ||
+    document.documentElement.webkitRequestFullscreen ||
+    document.documentElement.mozRequestFullScreen ||
+    document.documentElement.msRequestFullscreen;
+  if (rfs) rfs.call(document.documentElement);
+}
+
+function showInstructions() {
+  preInstructionsPanel.classList.add("hidden");
+  instructionsPanel.classList.remove("hidden");
+}
+
+function applyLanguageFromUI() {
+  setLanguage(languageSelect.value || "es");
+}
+
+continueButton.addEventListener("click", goToPreInstructions);
+showInstructionsButton.addEventListener("click", showInstructions);
+startButton.addEventListener("click", startExperiment);
+submitButton.addEventListener("click", submitResponse);
+responseInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    submitResponse();
+  }
+});
+downloadCsvButton.addEventListener("click", downloadCSV);
+languageSelect.addEventListener("change", applyLanguageFromUI);
+applyLanguageFromUI();
+
+function enterFullscreen() {
+  const el = document.documentElement;
+  const f = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  return f ? f.call(el) : Promise.resolve();
+}
+
+function getAudioContext() {
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    audioCtx = new Ctx();
+  }
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+function setLanguage(lang) {
+  participant.lang = lang;
+  ttsPreparedLang = null;
+  langBlocks.forEach(block => {
+    block.classList.toggle("active", block.dataset.lang === lang);
+  });
+  responsePrompt.textContent = lang === "ca"
+    ? "Escriu la sequencia i prem Enviar."
+    : "Escribe la secuencia y pulsa Enviar.";
+}
+
+function playBeep(type) {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  let freq = 440;
+  let duration = 0.12;
+  let volume = 0.2;
+  if (type === "ready") {
+    freq = 880;
+  } else if (type === "correct") {
+    freq = 660;
+    duration = 0.15;
+  } else if (type === "incorrect") {
+    freq = 220;
+    duration = 0.25;
+  }
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  gain.gain.value = 0;
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  const now = ctx.currentTime;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  osc.start(now);
+  osc.stop(now + duration + 0.02);
+}
+
+function updateCounter() {
+  trialCounter.textContent = `Ensayo ${trialCount}/${maxTrials}`;
+}
+
+function updateTTSLoading(visible, progress, message) {
+  if (typeof progress === "number") {
+    ttsProgressBar.style.width = `${Math.max(0, Math.min(100, progress))}%`;
+  }
+  if (message) ttsStatus.textContent = message;
+  ttsLoading.classList.toggle("visible", visible);
+}
+
+function waitForVoices(timeoutMs) {
+  const synth = window.speechSynthesis;
+  return new Promise(resolve => {
+    const immediate = synth.getVoices();
+    if (immediate.length) {
+      resolve(immediate);
+      return;
+    }
+    let done = false;
+    const finish = voices => {
+      if (done) return;
+      done = true;
+      synth.removeEventListener("voiceschanged", onChanged);
+      resolve(voices);
+    };
+    const onChanged = () => finish(synth.getVoices());
+    synth.addEventListener("voiceschanged", onChanged);
+    setTimeout(() => finish(synth.getVoices()), timeoutMs);
+  });
+}
+
+function pickCatalanVoice(voices) {
+  return voices.find(v => (v.lang || "").toLowerCase().startsWith("ca")) || null;
+}
+
+function warmupVoice(langCode, voice) {
+  const synth = window.speechSynthesis;
+  return new Promise(resolve => {
+    const utter = new SpeechSynthesisUtterance(langCode === "ca-ES" ? "prova" : "prueba");
+    utter.lang = langCode;
+    utter.rate = 1;
+    utter.volume = 0;
+    if (voice) utter.voice = voice;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      resolve();
+    };
+    utter.onend = finish;
+    utter.onerror = finish;
+    setTimeout(finish, 1000);
+    synth.speak(utter);
+  });
+}
+
+async function prepareTTS(lang) {
+  if (!window.speechSynthesis) return;
+  if (ttsPreparedLang === lang) return;
+
+  const synth = window.speechSynthesis;
+  synth.cancel();
+  const langCode = lang === "ca" ? "ca-ES" : "es-ES";
+  ttsCatalanVoice = null;
+
+  updateTTSLoading(true, 10, lang === "ca" ? "Carregant model de veu..." : "Cargando modelo de voz...");
+  const voices = await waitForVoices(3000);
+
+  if (lang === "ca") {
+    ttsCatalanVoice = pickCatalanVoice(voices);
+  }
+  const hasCatalanVoice = lang !== "ca" || Boolean(ttsCatalanVoice);
+  updateTTSLoading(
+    true,
+    65,
+    lang === "ca"
+      ? (hasCatalanVoice ? "Inicialitzant veu catalana..." : "No s'ha trobat veu catalana. S'utilitzara la veu del sistema.")
+      : "Inicializando voz..."
+  );
+  await warmupVoice(langCode, lang === "ca" ? ttsCatalanVoice : null);
+
+  ttsPreparedLang = lang;
+  updateTTSLoading(true, 100, lang === "ca" ? "Veu preparada" : "Voz preparada");
+  await new Promise(resolve => setTimeout(resolve, 180));
+  updateTTSLoading(false, 0, "");
+}
+
+function digitToSpeechToken(digit, lang) {
+  if (lang !== "ca") return String(digit);
+  const map = ["zero", "u", "dos", "tres", "quatre", "cinc", "sis", "set", "vuit", "nou"];
+  return map[digit] || String(digit);
+}
+
+function nextTrial() {
+  feedbackEl.textContent = '';
+  inputContainer.classList.add('hidden');
+  responseInput.value = "";
+  setSignalVisible(true);
+  sequence = generateSequence(currentLength);
+  trialCount++;
+  updateCounter();
+  speakSequence(sequence, () => {
+    trialStartTime = Date.now();
+    inputContainer.classList.remove('hidden');
+    setSignalVisible(false);
+    playBeep("ready");
+    responseInput.focus();
+  });
+}
+
+function generateSequence(length) {
+  const counts = {};
+  const seq = [];
+  while (seq.length < length) {
+    const digit = Math.floor(Math.random() * 10);
+    const last = seq[seq.length - 1];
+    const allowRepeat = length >= 8;
+    const c = counts[digit] || 0;
+    if (digit !== last && (allowRepeat ? c < 2 : c < 1)) {
+      seq.push(digit);
+      counts[digit] = c + 1;
+    }
+  }
+  return seq;
+}
+
+function speakSequence(seq, callback) {
+  const synth = window.speechSynthesis;
+  const lang = participant.lang === "ca" ? "ca-ES" : "es-ES";
+  const leadInMs = 120;
+  seq.forEach((d, i) => {
+    const utter = new SpeechSynthesisUtterance(digitToSpeechToken(d, participant.lang));
+    utter.rate = 1;
+    utter.lang = lang;
+    if (participant.lang === "ca" && ttsCatalanVoice) utter.voice = ttsCatalanVoice;
+    setTimeout(() => synth.speak(utter), i * 1000 + leadInMs);
+  });
+  setTimeout(callback, seq.length * 1000 + leadInMs);
+}
+
+function sanitizeDigits(value) {
+  return (value || "").replace(/\D/g, "");
+}
+
+function submitResponse() {
+  if (inputContainer.classList.contains("hidden")) return;
+  const response = sanitizeDigits(responseInput.value);
+  responseInput.value = response;
+  if (!response.length) {
+    feedbackEl.textContent = "Introduce al menos un numero para continuar.";
+    responseInput.focus();
+    return;
+  }
+  inputContainer.classList.add('hidden');
+  setSignalVisible(false);
+  const responseTime = Date.now() - trialStartTime;
+  checkResponse(response, responseTime);
+}
+
+function checkResponse(response, responseTime) {
+  const respDigits = response.split('').map(ch => parseInt(ch, 10));
+  const correctIO = respDigits.length === sequence.length && respDigits.every((d, i) => d === sequence[i]);
+  const aciertos = sequence.reduce((sum, d, i) => sum + (respDigits[i] === d ? 1 : 0), 0);
+  const acumulado = results.reduce((sum, r) => sum + r.aciertos, 0);
+
+  results.push({
+    participant_id: participant.id,
+    age: participant.age,
+    sex: participant.sex,
+    trial: trialCount,
+    sequence: sequence.join(''),
+    response: response,
+    correct_io: correctIO ? 1 : 0,
+    mean: 0,
+    sd: 0,
+    aciertos: aciertos,
+    acumulado_aciertos: acumulado + aciertos,
+    tiempo_respuesta: responseTime
+  });
+
+  feedbackEl.textContent = correctIO ? "Correcto" : "Incorrecto";
+  playBeep(correctIO ? "correct" : "incorrect");
+  trialsInSpan++;
+  if (correctIO) spanCorrects++;
+  if (trialsInSpan >= 2) {
+    currentLength += spanCorrects >= 1 ? 1 : -1;
+    if (currentLength < 2) currentLength = 2;
+    trialsInSpan = 0;
+    spanCorrects = 0;
+  }
+
+  setTimeout(() => {
+    feedbackEl.textContent = '';
+    if (trialCount < maxTrials) nextTrial();
+    else showSummary();
+  }, 2000);
+}
+
+function downloadCSV() {
+  const header = "participant_id,age,sex,trial,sequence,response,correct_io,mean,sd,aciertos,acumulado_aciertos,tiempo_respuesta\n";
+  const body = results.map(r =>
+    `${r.participant_id},${r.age},${r.sex},${r.trial},${r.sequence},${r.response},${r.correct_io},${r.mean},${r.sd},${r.aciertos},${r.acumulado_aciertos},${r.tiempo_respuesta}`
+  ).join("\n");
+  const blob = new Blob([header + body], { type: "text/csv" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "fonologic_span_results.csv";
+  link.click();
+}
+
+function setSignalVisible(visible) {
+  if (!signalIndicator) return;
+  signalIndicator.classList.toggle("visible", visible);
+}
+
+function logistic(x, a, b) {
+  return 1 / (1 + Math.exp(-(a + b * x)));
+}
+
+function fitLogistic(data) {
+  const grouped = {};
+  data.forEach(r => {
+    const len = r.sequence.length;
+    if (!grouped[len]) grouped[len] = { correct: 0, total: 0 };
+    grouped[len].total++;
+    if (r.correct_io) grouped[len].correct++;
+  });
+  for (let len = 3; len <= 12; len++) {
+    if (!grouped[len]) grouped[len] = { correct: 0, total: 1 };
+  }
+  const x = [], y = [];
+  Object.keys(grouped).forEach(k => {
+    x.push(+k);
+    y.push(grouped[k].correct / grouped[k].total);
+  });
+  let a = 0, b = 1, lr = 0.001;
+  for (let epoch = 0; epoch < 100000; epoch++) {
+    let da = 0, db = 0;
+    for (let i = 0; i < x.length; i++) {
+      const p = logistic(x[i], a, b);
+      const err = p - y[i];
+      da += err;
+      db += err * x[i];
+    }
+    a -= lr * da;
+    b -= lr * db;
+  }
+  const cpd = -a / b;
+  const sd = Math.PI / (b * Math.sqrt(3));
+  return { cpd, sd, a, b, x, y };
+}
+
+function showGraphLogistic(a, b, x, y) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 600;
+  canvas.height = 400;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, 600, 400);
+  ctx.strokeStyle = "#000"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(50, 350); ctx.lineTo(550, 350);
+  ctx.moveTo(50, 50); ctx.lineTo(50, 350); ctx.stroke();
+  ctx.font = "14px Arial"; ctx.fillStyle = "#000";
+  ctx.fillText("Longitud de la secuencia", 200, 380);
+  ctx.save(); ctx.translate(15, 250); ctx.rotate(-Math.PI / 2);
+  ctx.fillText("Proporcion de aciertos", 0, 0); ctx.restore();
+  for (let v = 0; v <= 1; v += 0.2) {
+    const ypix = 350 - v * 300;
+    ctx.fillText(v.toFixed(1), 20, ypix + 5);
+    ctx.beginPath(); ctx.moveTo(45, ypix); ctx.lineTo(55, ypix); ctx.stroke();
+  }
+  for (let i = 3; i <= 12; i++) {
+    const xpix = 50 + ((i - 3) / 9) * 500;
+    ctx.fillText(i, xpix - 5, 365);
+    ctx.beginPath(); ctx.moveTo(xpix, 345); ctx.lineTo(xpix, 355); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.strokeStyle = "blue"; ctx.lineWidth = 2;
+  for (let i = 0; i <= 100; i++) {
+    const val = 3 + i * (9 / 100);
+    const prob = logistic(val, a, b);
+    const xpix = 50 + ((val - 3) / 9) * 500;
+    const ypix = 350 - prob * 300;
+    i === 0 ? ctx.moveTo(xpix, ypix) : ctx.lineTo(xpix, ypix);
+  }
+  ctx.stroke();
+  ctx.fillStyle = "red";
+  x.forEach((val, i) => {
+    const xpix = 50 + ((val - 3) / 9) * 500;
+    const ypix = 350 - y[i] * 300;
+    ctx.beginPath(); ctx.arc(xpix, ypix, 4, 0, 2 * Math.PI); ctx.fill();
+  });
+  return canvas;
+}
+
+function showSummary() {
+  experimentStage.classList.remove("active");
+  trialCounter.style.display = 'none';
+  setSignalVisible(false);
+  resultsPanel.classList.remove('hidden');
+  const allCorrect = results.every(r => r.correct_io === 1);
+  if (allCorrect) {
+    resultsSummary.textContent = "Has acertado todas las secuencias. No se puede estimar el punto de corte del 50%.";
+    graphWrap.innerHTML = "<p>Sin grafico disponible.</p>";
+    return;
+  }
+  const { cpd, sd, a, b, x, y } = fitLogistic(results);
+  results.forEach(r => {
+    r.mean = cpd.toFixed(2);
+    r.sd = sd.toFixed(2);
+  });
+  resultsSummary.textContent = `Tu amplitud de digitos estimada (50% de aciertos) es aproximadamente ${cpd.toFixed(2)}.`;
+  const graph = showGraphLogistic(a, b, x, y);
+  graphWrap.innerHTML = '';
+  graphWrap.appendChild(graph);
+}
+</script>
+</body>
+</html>

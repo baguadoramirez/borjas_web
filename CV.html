@@ -1,590 +1,117 @@
-<!DOCTYPE html>
-
-<html>
-
+<!doctype html>
+<html lang="en" data-root="">
 <head>
-
-<meta charset="utf-8" />
-<meta name="generator" content="pandoc" />
-<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
-
-
-
-
-<title>Borja Aguado Ramírez</title>
-
-<script src="site_libs/header-attrs-2.25/header-attrs.js"></script>
-<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="site_libs/bootstrap-3.3.5/css/paper.min.css" rel="stylesheet" />
-<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
-<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
-<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
-<style>h1 {font-size: 34px;}
-       h1.title {font-size: 38px;}
-       h2 {font-size: 30px;}
-       h3 {font-size: 24px;}
-       h4 {font-size: 18px;}
-       h5 {font-size: 16px;}
-       h6 {font-size: 12px;}
-       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
-       pre:not([class]) { background-color: white }</style>
-<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
-<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
-<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
-<script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<html>
-<link rel="shortcut icon" href="./images/favicon.png">
-</html>
-
-
-<style type="text/css">
-  code{white-space: pre-wrap;}
-  span.smallcaps{font-variant: small-caps;}
-  span.underline{text-decoration: underline;}
-  div.column{display: inline-block; vertical-align: top; width: 50%;}
-  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-  ul.task-list{list-style: none;}
-    </style>
-
-<style type="text/css">code{white-space: pre;}</style>
-<script type="text/javascript">
-if (window.hljs) {
-  hljs.configure({languages: []});
-  hljs.initHighlightingOnLoad();
-  if (document.readyState && document.readyState === "complete") {
-    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
-  }
-}
-</script>
-
-
-
-
-
-
-<link rel="stylesheet" href="styles.css" type="text/css" />
-
-
-
-<style type = "text/css">
-.main-container {
-  max-width: 940px;
-  margin-left: auto;
-  margin-right: auto;
-}
-img {
-  max-width:100%;
-}
-.tabbed-pane {
-  padding-top: 12px;
-}
-.html-widget {
-  margin-bottom: 20px;
-}
-button.code-folding-btn:focus {
-  outline: none;
-}
-summary {
-  display: list-item;
-}
-details > summary > p:only-child {
-  display: inline;
-}
-pre code {
-  padding: 0;
-}
-</style>
-
-
-<style type="text/css">
-.dropdown-submenu {
-  position: relative;
-}
-.dropdown-submenu>.dropdown-menu {
-  top: 0;
-  left: 100%;
-  margin-top: -6px;
-  margin-left: -1px;
-  border-radius: 0 6px 6px 6px;
-}
-.dropdown-submenu:hover>.dropdown-menu {
-  display: block;
-}
-.dropdown-submenu>a:after {
-  display: block;
-  content: " ";
-  float: right;
-  width: 0;
-  height: 0;
-  border-color: transparent;
-  border-style: solid;
-  border-width: 5px 0 5px 5px;
-  border-left-color: #cccccc;
-  margin-top: 5px;
-  margin-right: -10px;
-}
-.dropdown-submenu:hover>a:after {
-  border-left-color: #adb5bd;
-}
-.dropdown-submenu.pull-left {
-  float: none;
-}
-.dropdown-submenu.pull-left>.dropdown-menu {
-  left: -100%;
-  margin-left: 10px;
-  border-radius: 6px 0 6px 6px;
-}
-</style>
-
-<script type="text/javascript">
-// manage active state of menu based on current page
-$(document).ready(function () {
-  // active menu anchor
-  href = window.location.pathname
-  href = href.substr(href.lastIndexOf('/') + 1)
-  if (href === "")
-    href = "index.html";
-  var menuAnchor = $('a[href="' + href + '"]');
-
-  // mark the anchor link active (and if it's in a dropdown, also mark that active)
-  var dropdown = menuAnchor.closest('li.dropdown');
-  if (window.bootstrap) { // Bootstrap 4+
-    menuAnchor.addClass('active');
-    dropdown.find('> .dropdown-toggle').addClass('active');
-  } else { // Bootstrap 3
-    menuAnchor.parent().addClass('active');
-    dropdown.addClass('active');
-  }
-
-  // Navbar adjustments
-  var navHeight = $(".navbar").first().height() + 15;
-  var style = document.createElement('style');
-  var pt = "padding-top: " + navHeight + "px; ";
-  var mt = "margin-top: -" + navHeight + "px; ";
-  var css = "";
-  // offset scroll position for anchor links (for fixed navbar)
-  for (var i = 1; i <= 6; i++) {
-    css += ".section h" + i + "{ " + pt + mt + "}\n";
-  }
-  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
-  document.head.appendChild(style);
-});
-</script>
-
-<!-- tabsets -->
-
-<style type="text/css">
-.tabset-dropdown > .nav-tabs {
-  display: inline-table;
-  max-height: 500px;
-  min-height: 44px;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
-  content: "\e259";
-  font-family: 'Glyphicons Halflings';
-  display: inline-block;
-  padding: 10px;
-  border-right: 1px solid #ddd;
-}
-
-.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
-  content: "\e258";
-  font-family: 'Glyphicons Halflings';
-  border: none;
-}
-
-.tabset-dropdown > .nav-tabs > li.active {
-  display: block;
-}
-
-.tabset-dropdown > .nav-tabs > li > a,
-.tabset-dropdown > .nav-tabs > li > a:focus,
-.tabset-dropdown > .nav-tabs > li > a:hover {
-  border: none;
-  display: inline-block;
-  border-radius: 4px;
-  background-color: transparent;
-}
-
-.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
-  display: block;
-  float: none;
-}
-
-.tabset-dropdown > .nav-tabs > li {
-  display: none;
-}
-</style>
-
-<!-- code folding -->
-
-
-
-<style type="text/css">
-
-#TOC {
-  margin: 25px 0px 20px 0px;
-}
-@media (max-width: 768px) {
-#TOC {
-  position: relative;
-  width: 100%;
-}
-}
-
-@media print {
-.toc-content {
-  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
-  float: right;
-}
-}
-
-.toc-content {
-  padding-left: 30px;
-  padding-right: 40px;
-}
-
-div.main-container {
-  max-width: 1200px;
-}
-
-div.tocify {
-  width: 20%;
-  max-width: 260px;
-  max-height: 85%;
-}
-
-@media (min-width: 768px) and (max-width: 991px) {
-  div.tocify {
-    width: 25%;
-  }
-}
-
-@media (max-width: 767px) {
-  div.tocify {
-    width: 100%;
-    max-width: none;
-  }
-}
-
-.tocify ul, .tocify li {
-  line-height: 20px;
-}
-
-.tocify-subheader .tocify-item {
-  font-size: 0.90em;
-}
-
-.tocify .list-group-item {
-  border-radius: 0px;
-}
-
-
-</style>
-
-
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Borja Aguado | CV</title>
+  <link rel="icon" href="images/favicon.png">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="shared/include.js"></script>
 </head>
-
 <body>
+  <div id="site-header"></div>
+  <main class="container">
+    <h1>Curriculum Vitae</h1>
+    <img src="images/me.png" class="profile-photo profile-photo--right" alt="Borja Aguado portrait">
 
-
-<div class="container-fluid main-container">
-
-
-<!-- setup 3col/9col grid for toc_float and main content  -->
-<div class="row">
-<div class="col-xs-12 col-sm-4 col-md-3">
-<div id="TOC" class="tocify">
-</div>
-</div>
-
-<div class="toc-content col-xs-12 col-sm-8 col-md-9">
-
-
-
-
-<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
-  <div class="container">
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <a class="navbar-brand" href="index.html">HOME</a>
-    </div>
-    <div id="navbar" class="navbar-collapse collapse">
-      <ul class="nav navbar-nav">
-        <li>
-  <a href="CV.html">Curriculum Vitae</a>
-</li>
-<li>
-  <a href="Current_Projects.html">Projects</a>
-</li>
+    <section class="content-section">
+      <h2>Contact</h2>
+      <ul>
+        <li>Email: <a href="mailto:borja.aguado@ub.edu">borja.aguado@ub.edu</a></li>
+        <li>Google Scholar: <a href="https://scholar.google.es/citations?user=-_N8q0UAAAAJ&amp;hl=en&amp;oi=ao">Borja Aguado</a></li>
+        <li>GitHub: <a href="https://github.com/baguadoramirez">baguadoramirez</a></li>
+        <li>OSF: <a href="https://osf.io/tj628/">baguadoramirez</a></li>
+        <li>LinkedIn: <a href="https://www.linkedin.com/in/borja-a-606a59119">Borja Aguado</a></li>
       </ul>
-      <ul class="nav navbar-nav navbar-right">
-        
+    </section>
+
+    <section class="content-section">
+      <h2>Positions</h2>
+      <ul>
+        <li>Lecturer, Universitat de Vic - Universitat Central de Catalunya (2023-present)</li>
+        <li>Postdoctoral researcher, Technische Universitaet Darmstadt (May 2022-August 2023)</li>
+        <li>PhD candidate, Universitat de Barcelona (2017-2022). Advisor: <a href="http://www.ub.edu/viscagroup/joan/">Joan Lopez-Moliner</a></li>
       </ul>
-    </div><!--/.nav-collapse -->
-  </div><!--/.container -->
-</div><!--/.navbar -->
+      <p><strong>Thesis:</strong> <em>Estimating motion and time to contact in 3D environments: Priors matter</em></p>
+    </section>
 
-<div id="header">
+    <section class="content-section">
+      <h2>Education</h2>
+      <ul>
+        <li>MSc, Research in Behaviour and Cognition, Universitat de Barcelona (2016-2017)</li>
+        <li>BSc, Psychology, Universidad Autonoma de Madrid (2012-2016)</li>
+        <li>Thesis with honors: <a href="http://www.ub.edu/ecvp/poster-sessions">Evidence for a temporal component in the influence of the colour of the surrounding</a></li>
+      </ul>
+    </section>
 
+    <section class="content-section">
+      <h2>Teaching</h2>
+      <h3>Lecturer, Universitat de Vic - Universitat Central de Catalunya (2023-present)</h3>
+      <ul>
+        <li>Psychobiology Fundamentals, Psychology BSc</li>
+        <li>Perception, Attention &amp; Memory, Psychology BSc</li>
+        <li>Internship Practicum I, Psychology BSc</li>
+        <li>Internship Practicum II, Psychology BSc</li>
+        <li>Undergraduate Thesis Supervision, Psychology BSc</li>
+        <li>Master's Thesis Supervision, Master's in General Health Psychology</li>
+        <li>Master's Thesis Supervision, Master's in Montessori Pedagogy</li>
+      </ul>
 
+      <h3>Postdoctoral researcher, Technische Universitaet Darmstadt (2022-2023)</h3>
+      <ul>
+        <li>Experimental Practicum, Psychology BSc</li>
+        <li>Handeln (Perception &amp; Action), Cognitive Sciences BSc</li>
+      </ul>
 
-<h1 class="title toc-ignore">Borja Aguado Ramírez</h1>
+      <h3>PhD candidate, Universitat de Barcelona (2017-2022)</h3>
+      <ul>
+        <li>Perception &amp; Action, Psychology BSc</li>
+      </ul>
+    </section>
 
-</div>
+    <section class="content-section">
+      <h2>Publications</h2>
+      <ul>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2025). The predictive outfielder: A critical test across gravities. <em>Royal Society Open Science, 12</em>(2), 241291. <a href="https://doi.org/10.1098/rsos.241291">https://doi.org/10.1098/rsos.241291</a></li>
+        <li>Aguado, B. (2022). Estimating motion and time to contact in 3D environments: Priors matter (Doctoral dissertation, Universitat de Barcelona). <a href="https://diposit.ub.edu/dspace/bitstream/2445/193301/1/BAR_PhD_THESIS.pdf">https://diposit.ub.edu/dspace/bitstream/2445/193301/1/BAR_PhD_THESIS.pdf</a></li>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2021). Gravity and known size calibrate visual information to time parabolic trajectories. <em>Frontiers in Human Neuroscience, 15</em>. <a href="https://doi.org/10.3389/fnhum.2021.642025">https://doi.org/10.3389/fnhum.2021.642025</a></li>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2021). Flexible viewing time when estimating time-to-contact in 3D parabolic trajectories. <em>Journal of Vision, 21</em>(4), 9. <a href="https://doi.org/10.1167/jov.21.4.9">https://doi.org/10.1167/jov.21.4.9</a></li>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2019). Perceived speed of motion in depth modulates misjudgements of approaching trajectories consistently with a slow prior. <em>Vision Research, 159</em>, 1-9. <a href="https://doi.org/10.1016/j.visres.2019.03.009">https://doi.org/10.1016/j.visres.2019.03.009</a></li>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2020). Active sampling to estimate TTC in a 3D parabolic trajectory [Data set]. Open Science Framework.</li>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2020). Gravity and known size to time parabolic trajectories [Data set]. Open Science Framework.</li>
+      </ul>
+    </section>
 
+    <section class="content-section">
+      <h2>Conference presentations</h2>
+      <ul>
+        <li>Ciraso Cali, A., Roig Ester, H., Aguado, B., Nadal Escola, E., &amp; Ballespi Sola, S. (2025, November). Feasibility, satisfaction and perceived learning in the translational versions of MISC (Mediational Intervention for Sensitizing Caregivers) for teachers and parents. Paper presented at the 11th International Congress of Clinical and Health Psychology in Children and Adolescents, Andalusia, Spain.</li>
+        <li>Aguado, B., &amp; Van Dam, L. (2025, August). Explaining the angle-of-approach and curveball effects in interception with an LQG model that combines trajectory prediction and implicit goal costs. Paper presented at the European Conference on Visual Perception (ECVP), Rheinhessen-Pfalz, Germany.</li>
+        <li>Cepero Amores, L., Aivar Rodriguez, M. P., Plaza, V., &amp; Aguado, B. (2025, April). How do sensory uncertainty and attention shape visuomotor decision-making? Paper presented at the Reunion Cientifica sobre Atencion (RECA-14), Community of Madrid, Spain.</li>
+        <li>Ciraso Cali, A., Aguado, B., Nadal Escola, E., Roig Ester, H., &amp; Ballespi Sola, S. (2024, November). Enhancing mentalization skills in teachers to build healthier educational and community environments. Paper presented at the III Congres Internacional Innovacio en Salut Mental i Benestar Social (ISaMBeS), Catalonia, Spain.</li>
+        <li>Aguado, B., Bechert, J., Besim, S., Disly, L., Goschy, M., Schafer, L., &amp; Van Dam, L. (2024, August). Predictive control in interception tasks: Understanding the angle-of-approach and curveball effects. Paper presented at the European Conference on Visual Perception (ECVP), North Eastern Scotland, United Kingdom.</li>
+        <li>Van Dam, L., &amp; Aguado, B. (2024, August). The motion induced position shift on target and cursor items: An optimal control account. Paper presented at the European Conference on Visual Perception (ECVP), North Eastern Scotland, United Kingdom.</li>
+        <li>Aguado, B., Bechert, J., Besim, S., Disly, L., Goschy, M., Schafer, L., &amp; Van Dam, L. (2024, June). Predictive mechanisms for the control of eye-hand coordination in interception. Paper presented at the 10th Iberian Conference on Perception, Community of Madrid, Spain.</li>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2022, June). Different effects of gravitation and known size on the interception of a flying ball. Paper presented at the Vision Sciences Society Annual Meeting (VSS, virtual), United States of America.</li>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2020, June). Active sampling of the optic flow to predict time-to-contact. Paper presented at the Vision Sciences Society Annual Meeting (VSS), United States of America.</li>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2019, November). How to move to catch flying balls with updating predictions. Paper presented at the IV PhD Workshop of the Institute of Neuroscience UB, Catalonia, Spain.</li>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2019, June). Accuracy and precision of time-to-contact estimates based on knowing size and gravity. Paper presented at the 8th Iberian Conference on Perception, Community of Madrid, Spain.</li>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2019, May). How to move to catch flying balls with updating predictions. Paper presented at the Vision Sciences Society Annual Meeting (VSS), United States of America.</li>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2018, July). The psychophysicist in you: Is speed in depth independent from direction? Paper presented at the 1st LGBTQ+ in STEM Day, Catalonia, Spain.</li>
+        <li>Aguado, B., &amp; L&oacute;pez-Moliner, J. (2017, July). Slow motion prior does not account for biased approaching direction of 3D targets. Paper presented at the 7th Iberian Congress on Perception, Centro, Portugal.</li>
+        <li>Aguado, B., Munoz Maho, C., Rucci, M., &amp; Brenner, E. (2016, August). Evidence for a temporal component in the influence of the colour of the surrounding. Paper presented at the European Conference on Visual Perception (ECVP 39), Barcelona, Spain.</li>
+      </ul>
+    </section>
 
-<style>
-.column-left{
-  float: left;
-  width: 45%;
-  text-align: left;
-}
-.column-center{
-  display: inline-block;
-  width: 10%;
-  text-align: center;
-}
-.column-right{
-  float: right;
-  width: 45%;
-  text-align: center;
-}
-</style>
-<div class="column-left">
-<p>From Toledo, living <em>who knows where…</em> <br> <b>Contact:</b>
-<br> ✉ E-mail : <a
-href="mailto:borja.aguado@ub.edu">borja.aguado@ub.edu</a> <br>
-<img src="images/scholar.png" width="20px"> Google Scholar: <a
-href="https://scholar.google.es/citations?user=-_N8q0UAAAAJ&amp;hl=en&amp;oi=ao">Borja
-Aguado</a> <br> <img src="images/github.png" width="20px"> GitHub: <a
-href="https://github.com/baguadoramirez">baguadoramirez</a> <br>
-<img src="images/OSF.png" width="20px"> OSF: <a
-href="https://osf.io/tj628/">baguadoramirez</a> <br>
-<img src="images/linkedin.png" width="20px"> LikedIn: <a
-href="https://www.linkedin.com/in/borja-a-606a59119">Borja Aguado</a>
-<!--<br> <img src="images/twitter.png" width="20px"> Twitter: [b_aguador](https://twitter.com/b_aguador)-->
-<br></p>
-</div>
-<div class="column-center">
-
-</div>
-<div class="column-right">
-<p><img src="images/id.png" width="200px"></p>
-</div>
-<style>
-  .col2 {
-    columns: 2 200px;         /* number of columns and width in pixels*/
-    -webkit-columns: 2 200px; /* chrome, safari */
-    -moz-columns: 2 200px;    /* firefox */
-  }
-  .col3 {
-    columns: 3 100px;
-    -webkit-columns: 3 100px;
-    -moz-columns: 3 100px;
-  }
-</style>
-<div id="training" class="section level2">
-<h2>Training</h2>
-<p>Bachelor’s degree in Psychology (Universidad Autónoma de Madrid;
-2012-2016)</p>
-<ul>
-<li>Bachelor’s thesis passed with honors: <a
-href="http://www.ub.edu/ecvp/poster-sessions">“Evidence for a temporal
-component in the influence of the colour of the surrounding”</a></li>
-</ul>
-<p>Master’s degree in Research in Behaviour and Cognition (Universtat de
-Barcelona; 2016-2017)</p>
-<p>PhD Candidate under the trainee of <a
-href="http://www.ub.edu/viscagroup/joan/">Joan López-Moliner</a>
-(Universitat de Barcelona; 2017-2022)</p>
-<ul>
-<li>Thesis name: <u> Estimating motion and time to contact in 3D
-environments: Priors matter. </u></li>
-</ul>
-<p>Postdoctoral researcher at Technische Universitëit Darmstadt (May
-2022- Agugust 2023)</p>
-<p>Lecturer at Universitat de Vic - Universitat Central de Catalunya
-(2023-Present)</p>
-</div>
-<div id="teaching" class="section level2">
-<h2>Teaching</h2>
-<ul>
-<li><p><em>Perception &amp; Action</em> of the Psychology Bachelor’s
-degree program at the Universitat de Barcelona.</p></li>
-<li><p><em>Experimental Practicum</em> of the Psychology Bachelor’s
-degree program at the Technische Universitëit Darmstadt.</p></li>
-<li><p><em><em>Handeln</em> (Perception &amp; Action)</em> of the
-Cognitive Sciences Bachelor’s degree program at the Technische
-Universitëit Darmstadt.</p></li>
-<li><p><em>Experimental Practicum</em> of the Cognitive Sciences
-Bachelor’s degree program at the Technische Universitëit
-Darmstadt.</p></li>
-<li><p><em>Psychobiology fundamentals</em> of the Psychology Bachelor’s
-degree program at the Universitat de Vic - Universitat Central de
-Catalunya.</p></li>
-<li><p><em>Perception Atention &amp; Memory</em> of the Psychology
-Bachelor’s degree program at the Universitat de Vic - Universitat
-Central de Catalunya.</p></li>
-</ul>
-</div>
-<div id="academic-curriculum" class="section level2">
-<h2>Academic Curriculum</h2>
-<div id="publications" class="section level3">
-<h3>Publications</h3>
-<ul>
-<li><p>Preprint: </b>Aguado, B., &amp; Lopez-Moliner, J. (2024). The
-predictive outfielder: a critical test across gravities. bioRxiv,
-2024-01. <a href="https://doi.org/10.1101/2024.01.08.574654">Click Here
-to preview</a></p></li>
-<li><p>Estimating motion and time to contact in 3D environments: Priors
-matter. <a
-href="https://diposit.ub.edu/dspace/bitstream/2445/193301/1/BAR_PhD_THESIS.pdf">Click
-Here to download</a></p></li>
-<li><p>Aguado, B., &amp; López-Moliner, J. (2021). Gravity and Known
-Size Calibrate Visual Information to Time Parabolic Trajectories.
-<em>Frontiers in Human Neuroscience, 15, 642025</em>.<a
-href="https://doi.org/10.3389/fnhum.2021.642025">doi:
-10.3389/fnhum.2021.642025</a></p></li>
-<li><p>Aguado, B., &amp; López-Moliner, J. (2021). Flexible viewing time
-when estimating time-to-contact in 3D parabolic trajectories.
-<em>Journal of Vision, 21(4), 9-9</em>. <a
-href="https://doi.org/10.1167/jov.21.4.9">doi:
-10.1167/jov.21.4.9</a></p></li>
-<li><p>Aguado, B., &amp; López-Moliner, J. (2019). Perceived speed of
-motion in depth modulates misjudgements of approaching trajectories
-consistently with a slow prior. <em>Vision research, 159, 1-9.</em> DOI:
-<a href="https://doi.org/10.1016/j.visres.2019.03.009"
-class="uri">https://doi.org/10.1016/j.visres.2019.03.009</a></p></li>
-</ul>
-</div>
-<div id="poster-presentations" class="section level3">
-<h3>Poster presentations</h3>
-<ul>
-<li><p>Aguado, R, Borja; M. Maho, Cristina M; Rucci, Michele; Brenner,
-Eli. (2016, September). <em>Evidence for a temporal component in the
-influence of the colour of the surrounding.</em> European Conference on
-Visual Perception (ECVP), Barcelona.</p></li>
-<li><p>Aguado, Borja; López-Moliner, Joan. (2019, May). <em>How to move
-to catch flying balls with updating predictions.</em> Vision Sciences
-Society (VSS), St.Pete Beach, Florida.</p></li>
-</ul>
-</div>
-<div id="oral-presentations" class="section level3">
-<h3>Oral presentations</h3>
-<ul>
-<li>Aguado, Borja; López-Moliner, Joan. (2019, June). <em>Accuracy and
-precision of time-to-contact estimates based on knowing size and
-gravity.</em> 8th Iberian Conference on Perception (CIP), Sna Lorenzo
-del Escorial, Madrid (Spain).</li>
-</ul>
-</div>
-</div>
-<div id="grants-fellowships" class="section level2">
-<h2>Grants &amp; Fellowships</h2>
-<ul>
-<li><p>Beca de Colaboración MECD (Colaboración Universitaria -
-2016/2017)</p></li>
-<li><p>Beca de Colaboración UB (FPSC2017.3)</p></li>
-<li><p>2018FI_B00090 (April 2018 - September 2018) fellowship from
-Agència de Gestió d’Ajuts Universitaris i de Recerca.</p></li>
-</ul>
-<hr>
-</div>
-
-<html>
-<footer role="contentinfo" id="site-footer">
-<small><p class="copyright">&#169; 2019,
-		This webpage was created by Borja Aguado using <a href="http://www.r-project.org">R</a> with <a href="http://rmarkdown.rstudio.com">RMarkdown</a>, hosted on <a href="http://github.com">Github</a> and based on <a href="https://github.com/jules32/rmarkdown-website-tutorial"> jules32/rmarkdown-website-tutorial</a> project. </small></p>
-</footer>
-</html>
-
-
-</div>
-</div>
-
-</div>
-
-<script>
-
-// add bootstrap table styles to pandoc tables
-function bootstrapStylePandocTables() {
-  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
-}
-$(document).ready(function () {
-  bootstrapStylePandocTables();
-});
-
-
-</script>
-
-<!-- tabsets -->
-
-<script>
-$(document).ready(function () {
-  window.buildTabsets("TOC");
-});
-
-$(document).ready(function () {
-  $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open');
-  });
-});
-</script>
-
-<!-- code folding -->
-
-<script>
-$(document).ready(function ()  {
-
-    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
-    $('.unlisted.unnumbered').addClass('toc-ignore')
-
-    // move toc-ignore selectors from section div to header
-    $('div.section.toc-ignore')
-        .removeClass('toc-ignore')
-        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
-
-    // establish options
-    var options = {
-      selectors: "h1,h2,h3",
-      theme: "bootstrap3",
-      context: '.toc-content',
-      hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
-      },
-      ignoreSelector: ".toc-ignore",
-      scrollTo: 0
-    };
-    options.showAndHide = true;
-    options.smoothScroll = true;
-
-    // tocify
-    var toc = $("#TOC").tocify(options).data("toc-tocify");
-});
-</script>
-
-<!-- dynamically load mathjax for compatibility with self-contained -->
-<script>
-  (function () {
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
-    document.getElementsByTagName("head")[0].appendChild(script);
-  })();
-</script>
-
+    <section class="content-section">
+      <h2>Grants &amp; Fellowships</h2>
+      <ul>
+        <li>Beca de Colaboracion MECD (Colaboracion Universitaria - 2016/2017)</li>
+        <li>Beca de Colaboracion UB (FPSC2017.3)</li>
+        <li>2018FI_B00090 (April 2018 - September 2018) fellowship from Agencia de Gestio d'Ajuts Universitaris i de Recerca</li>
+      </ul>
+    </section>
+  </main>
+  <div id="site-footer"></div>
 </body>
 </html>
