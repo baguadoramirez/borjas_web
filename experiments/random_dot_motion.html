@@ -17,6 +17,32 @@
       position: absolute; bottom: 7vh; width: 100%; text-align: center;
       color: #e4e4e4; font-size: 1.1rem;
     }
+    #touchButtons {
+      position: absolute;
+      left: 50%;
+      bottom: 2vh;
+      transform: translateX(-50%);
+      display: none;
+      gap: 14px;
+      z-index: 1002;
+    }
+    #touchButtons.visible {
+      display: flex;
+    }
+    .resp-btn {
+      min-width: 180px;
+      padding: 12px 16px;
+      font-size: 1.05rem;
+      border-radius: 10px;
+      border: 1px solid #6a6a6a;
+      background: #1a1a1a;
+      color: #fff;
+      touch-action: manipulation;
+    }
+    @media (max-width: 760px) {
+      #touchButtons { width: calc(100% - 24px); }
+      .resp-btn { flex: 1; min-width: 0; }
+    }
     .kbd {
       display: inline-block; border: 1px solid #666; border-bottom-width: 2px; border-radius: 6px;
       padding: 2px 8px; margin: 0 2px; background: #101010; color: #fff;
@@ -54,7 +80,7 @@
         <li>Mira la cruz del centro.</li>
         <li>Apareceran muchos puntitos.</li>
         <li>Di hacia donde van mas: izquierda o derecha.</li>
-        <li>Pulsa <span class="kbd">Flecha Izquierda</span> o <span class="kbd">Flecha Derecha</span>.</li>
+        <li>Pulsa <span class="kbd">Flecha Izquierda</span> / <span class="kbd">Flecha Derecha</span> o los botones en pantalla.</li>
       </ol>
       <div class="button-row"><button id="startButton" type="button">Comenzar practica</button></div>
     </section>
@@ -69,6 +95,10 @@
       <div id="trialCounter">0/0</div>
       <div id="fixation">+</div>
       <div id="responseHint"></div>
+      <div id="touchButtons" aria-live="polite">
+        <button id="leftResponseBtn" class="resp-btn" type="button">← Izquierda</button>
+        <button id="rightResponseBtn" class="resp-btn" type="button">Derecha →</button>
+      </div>
     </section>
 
     <section id="results" class="results-panel hidden">
@@ -90,13 +120,15 @@
     const coherenceCtx = coherenceCanvas.getContext("2d");
     const trialCounter = document.getElementById("trialCounter");
     const responseHint = document.getElementById("responseHint");
+    const touchButtons = document.getElementById("touchButtons");
+    const leftResponseBtn = document.getElementById("leftResponseBtn");
+    const rightResponseBtn = document.getElementById("rightResponseBtn");
     const canvas = document.getElementById("rdmCanvas");
     const ctx = canvas.getContext("2d");
 
     const settings = {
       fixationMs: 500,
       stimulusMs: 900,
-      responseMs: 2000,
       numDots: 260,
       dotRadiusPx: 2,
       dotSpeedPx: 3,
@@ -113,7 +145,7 @@
     let staircaseStep = 0.1, correctStreak = 0, previousDirection = 0;
     let reversals = [], data = [], dots = [];
     let trialDirection = 1, trialCoherence = coherence;
-    let responseDeadline = 0, responseStart = 0, responseCaptured = false;
+    let responseStart = 0, responseCaptured = false, waitingResponse = false;
     let stimulusRunning = false, animationFrame = null;
     let apertureRadius = settings.apertureRadiusPx, estimatedFrameMs = 1000 / 60;
 
@@ -168,6 +200,9 @@
       animationFrame = requestAnimationFrame(frame);
     }
     function stopStimulus() { stimulusRunning = false; if (animationFrame) cancelAnimationFrame(animationFrame); animationFrame = null; ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    function setResponseButtonsVisible(visible) {
+      touchButtons.classList.toggle("visible", visible);
+    }
     function adjustStaircase(correct) {
       let dir = 0;
       if (correct) { correctStreak += 1; if (correctStreak >= 2) { coherence -= staircaseStep; correctStreak = 0; dir = -1; } }
@@ -206,7 +241,7 @@
       if (!isPractice && trialIndex >= numTrials) { finishExperiment(); return; }
       trialCounter.textContent = isPractice ? `Practica ${practiceIndex + 1}/${settings.practiceTrials}` : `${trialIndex + 1}/${numTrials}`;
       responseHint.textContent = isPractice ? "Ensayo de practica" : "";
-      responseCaptured = false; trialDirection = Math.random() < 0.5 ? -1 : 1;
+      responseCaptured = false; waitingResponse = false; setResponseButtonsVisible(false); trialDirection = Math.random() < 0.5 ? -1 : 1;
       trialCoherence = isPractice ? settings.practiceCoherence : coherence;
       createDots(); assignCoherentDots(trialCoherence); stopStimulus();
       setTimeout(() => runStimulus(settings.stimulusMs), settings.fixationMs);
@@ -214,22 +249,23 @@
     function endPractice() { stopStimulus(); experimentStage.classList.remove("active"); practiceDonePanel.classList.remove("hidden"); }
     function responseWindow() {
       responseHint.innerHTML = `${isPractice ? "Practica: " : ""}Direccion: <span class="kbd">←</span> izquierda o <span class="kbd">→</span> derecha`;
-      responseStart = performance.now(); responseDeadline = responseStart + settings.responseMs;
-      const timer = setInterval(() => {
-        if (responseCaptured) { clearInterval(timer); return; }
-        if (performance.now() > responseDeadline) { clearInterval(timer); saveResponse(null, null, true); }
-      }, 16);
+      responseStart = performance.now();
+      waitingResponse = true;
+      setResponseButtonsVisible(true);
     }
-    function saveResponse(key, rt, timeout) {
+    function saveResponse(key, rt) {
+      if (!waitingResponse || responseCaptured) return;
       responseCaptured = true;
+      waitingResponse = false;
+      setResponseButtonsVisible(false);
       const ans = key === "ArrowLeft" ? -1 : key === "ArrowRight" ? 1 : 0;
-      const isCorrect = timeout ? false : ans === trialDirection;
+      const isCorrect = ans === trialDirection;
       if (!isPractice) adjustStaircase(isCorrect);
       if (isPractice) { practiceIndex += 1; setTimeout(nextTrial, 300); return; }
       data.push({
         trial: trialIndex + 1, direction: trialDirection === -1 ? "izquierda" : "derecha", coherence: trialCoherence,
-        response: ans === -1 ? "izquierda" : ans === 1 ? "derecha" : "sin_respuesta", correct: isCorrect ? 1 : 0,
-        rt_ms: rt ?? "", timeout: timeout ? 1 : 0, step: staircaseStep, reversals: reversals.length
+        response: ans === -1 ? "izquierda" : "derecha", correct: isCorrect ? 1 : 0,
+        rt_ms: rt ?? "", timeout: 0, step: staircaseStep, reversals: reversals.length
       });
       trialIndex += 1; setTimeout(nextTrial, 350);
     }
@@ -275,10 +311,17 @@
 
     window.addEventListener("resize", resizeCanvas);
     document.addEventListener("keydown", e => {
-      if (!experimentStage.classList.contains("active") || responseCaptured) return;
+      if (!experimentStage.classList.contains("active") || responseCaptured || !waitingResponse) return;
       if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-      if (performance.now() > responseDeadline) return;
-      saveResponse(e.key, Math.round(performance.now() - responseStart), false);
+      saveResponse(e.key, Math.round(performance.now() - responseStart));
+    });
+    leftResponseBtn.addEventListener("pointerdown", () => {
+      if (!waitingResponse) return;
+      saveResponse("ArrowLeft", Math.round(performance.now() - responseStart));
+    });
+    rightResponseBtn.addEventListener("pointerdown", () => {
+      if (!waitingResponse) return;
+      saveResponse("ArrowRight", Math.round(performance.now() - responseStart));
     });
     document.getElementById("continueButton").addEventListener("click", showInstructions);
     document.getElementById("startButton").addEventListener("click", startPractice);
