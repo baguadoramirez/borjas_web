@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Visoespatial Span - Repeticion Directa</title>
+  <title>Visoespatial Span - Repeticion Inversa</title>
   <link rel="stylesheet" href="experiment.css">
   <style>
     #experimentStage { background: #000; }
@@ -80,8 +80,8 @@
 <body class="experiment-page">
   <div class="experiment-shell">
     <section id="setup" class="panel">
-      <h1>Visoespatial Span</h1>
-      <p>Prueba de memoria visuoespacial basada en secuencias de bloques.</p>
+      <h1>Visoespatial Span Inverso</h1>
+      <p>Prueba de memoria visuoespacial basada en secuencias de bloques en orden inverso.</p>
 
       <h2>Informacion del participante</h2>
       <div class="form-grid">
@@ -118,7 +118,7 @@
       <h2>Instrucciones</h2>
       <ol>
         <li>Observa la secuencia de bloques que se iluminan en rojo.</li>
-        <li>Cuando termine la secuencia, reproduce el orden haciendo clic sobre los bloques.</li>
+        <li>Cuando termine la secuencia, reproduce el orden inverso haciendo clic sobre los bloques.</li>
         <li>Mientras veas la senal STOP, todavia no debes responder.</li>
         <li>El experimento aumenta o reduce la longitud segun tus respuestas.</li>
       </ol>
@@ -443,8 +443,9 @@ canvas.addEventListener("pointerdown", e => {
 });
 
 function checkResponse(responseTime) {
-  const correct = clickedOrder.every((v, i) => v === sequence[i]);
-  const numCorrect = clickedOrder.filter((v, i) => v === sequence[i]).length;
+  const reversed = [...sequence].reverse();
+  const correct = clickedOrder.every((v, i) => v === reversed[i]);
+  const numCorrect = clickedOrder.filter((v, i) => v === reversed[i]).length;
   const acumulado = results.reduce((s, r) => s + r.aciertos, 0);
   results.push({
     participant_id: participant.id,
@@ -486,7 +487,7 @@ function downloadCSV() {
   const blob = new Blob([header + body], { type: "text/csv" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "visoespatial_span_results.csv";
+  link.download = "visoespatial_span_inverse_results.csv";
   link.click();
 }
 

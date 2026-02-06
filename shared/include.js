@@ -66,7 +66,8 @@
     '      <div class="nav-dropdown">' +
     '        <span class="nav-link nav-button" tabindex="0">Experiments</span>' +
     '        <div class="dropdown-menu" aria-label="Experiments">' +
-    '          <a href="{{ROOT}}experiments/visoespatial_span.html">Corsi Blocks (Full)</a>' +
+    '          <a href="{{ROOT}}experiments/visoespatial_span.html">Corsi Blocks (Direct)</a>' +
+    '          <a href="{{ROOT}}experiments/visoespatial_span_inverse.html">Corsi Blocks (Inverse)</a>' +
     '          <a href="{{ROOT}}experiments/fonologic_span.html">Digit Span</a>' +
     '          <a href="{{ROOT}}experiments/posner.html">Posner (Tactile)</a>' +
     '          <a href="{{ROOT}}experiments/fantasma.html">Fantasma Tracking</a>' +
