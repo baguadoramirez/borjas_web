@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Seguimiento del Fantasma</title>
+  <title>Experimento de Coordinacion Visomotora</title>
   <link rel="stylesheet" href="experiment.css">
   <style>
     body {
@@ -44,8 +44,8 @@
 <body class="experiment-page">
   <div class="experiment-shell">
     <section id="setup" class="panel">
-      <h1>Seguimiento del Fantasma</h1>
-      <p>Tarea de seguimiento continuo con cambios aleatorios de trayectoria.</p>
+      <h1>Experimento de Coordinacion Visomotora</h1>
+      <p>En este experimento de coordinacion visomotora tienes que seguir a un fantasma que se mueve por la pantalla.</p>
 
       <h2>Informacion del participante</h2>
       <div class="form-grid">
@@ -72,7 +72,7 @@
     </section>
 
     <section id="preInstructions" class="panel intermediate-panel hidden">
-      <p class="intermediate-message">A continuacion apareceran las instrucciones. Leelas con atencion antes de empezar.</p>
+      <p class="intermediate-message">A continuacion veras las instrucciones del experimento de coordinacion visomotora. Leelas con atencion antes de empezar.</p>
       <div class="button-row">
         <button id="showInstructionsButton" type="button">Ver instrucciones</button>
       </div>
@@ -80,15 +80,13 @@
 
     <section id="instructions" class="panel hidden">
       <h2>Instrucciones</h2>
-      <ol>
-        <li>Coloca el cursor (o el dedo) sobre el fantasma.</li>
-        <li>Cuando estes encima, aparecera un halo rojo.</li>
-        <li>El cursor del sistema no sera visible, pero veras un cursor de seguimiento.</li>
-        <li>Para iniciar cada bloque, mantente encima 1 segundo continuo.</li>
-        <li>Intenta seguir la cruz roja con la mayor precision posible.</li>
-      </ol>
+      <p>Vamos a jugar a seguir un fantasma que se mueve por la pantalla.</p>
+      <p>Mueve tu mano o tu dedo para poner la cruz encima del fantasma. Cuando lo haces bien, la cruz se pone verde.</p>
+      <p>Para empezar cada parte del juego, quedate un segundo entero dentro del fantasma, sin salirte.</p>
+      <p>Cuando empiece, intenta seguir al fantasma todo el rato y no lo pierdas.</p>
+      <p>A veces la cruz va un poquito tarde porque el fantasma hace travesuras. No pasa nada. Tu sigue intentandolo lo mejor que puedas.</p>
       <div class="button-row">
-        <button id="startButton" type="button">Comenzar experimento</button>
+        <button id="startButton" type="button">Comenzar experimento de coordinacion visomotora</button>
       </div>
     </section>
 
@@ -249,7 +247,7 @@
       pointerHistory.length = 0;
       waitingForHold = true;
       holdStartTime = null;
-      trialCounter.textContent = `Bloque ${currentBlock + 1}/${blocks} - Delay ${delaySchedule[currentBlock] || 0} ms`;
+      trialCounter.textContent = `Bloque ${currentBlock + 1}/${blocks}`;
       lastTimestamp = null;
       requestAnimationFrame(update);
     }
@@ -393,7 +391,7 @@
         }
         ctx.fillStyle = "white";
         ctx.font = "20px sans-serif";
-        ctx.fillText("Mantente sobre el fantasma 1 segundo para iniciar", 60, 80);
+        ctx.fillText("Quedate sobre el fantasma 1 segundo para iniciar", 60, 80);
         requestAnimationFrame(update);
         return;
       }
@@ -458,7 +456,7 @@
       ctxr.fillStyle = '#111111';
       ctxr.font = '16px Arial';
 
-      const labels = delaySchedule.map((delay, i) => `B${i + 1} - Delay : ${delay || 0}`);
+      const labels = delaySchedule.map((delay, i) => `B${i + 1} - Retraso del fantasma: ${delay || 0} ms`);
       const paddingLeft = 70;
       const paddingRight = 30;
       const chartWidth = resultsCanvas.width - paddingLeft - paddingRight;
@@ -527,7 +525,7 @@
       const blob = new Blob([header + body], { type: 'text/csv' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = 'fantasma_results.csv';
+      link.download = 'coordinacion_visomotora_results.csv';
       link.click();
     }
 
