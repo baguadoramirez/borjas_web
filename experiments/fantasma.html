@@ -81,11 +81,11 @@
     <section id="instructions" class="panel hidden">
       <h2>Instrucciones</h2>
       <ol>
-        <li>Coloca el cursor (o el dedo) sobre el parche de Gabor.</li>
+        <li>Coloca el cursor (o el dedo) sobre el fantasma.</li>
         <li>Cuando estes encima, aparecera un halo rojo.</li>
         <li>El cursor del sistema no sera visible, pero veras un cursor de seguimiento.</li>
         <li>Para iniciar cada bloque, mantente encima 1 segundo continuo.</li>
-        <li>Intenta seguirlo con la mayor precision posible.</li>
+        <li>Intenta seguir la cruz roja con la mayor precision posible.</li>
       </ol>
       <div class="button-row">
         <button id="startButton" type="button">Comenzar experimento</button>
@@ -127,20 +127,19 @@
     const startButton = document.getElementById('startButton');
     const downloadButton = document.getElementById('downloadCsv');
 
-    const gaborSigma = 30;
-    const gaborSize = gaborSigma * 6;
-    const targetRadius = gaborSigma * 3;
+    const targetRadius = 90;
     const ghost = { x: 400, y: 300, angle: 0, radius: targetRadius };
     const mouse = { x: 0, y: 0 };
     const delaySchedule = [0, 0, 50, 100, 150];
     const maxDelay = Math.max(...delaySchedule);
-    const blockDuration = 30000;
+    const blockDuration = 60000;
     const blocks = delaySchedule.length;
     const pointerHistory = [];
 
     let currentBlock = 0;
     let errors = [];
     let blockErrors = [];
+    let blockVariability = [];
     let waitingForHold = true;
     let holdStartTime = null;
     let lastTouch = null;
@@ -148,35 +147,9 @@
     let participant = { id: '', age: 0, sex: '' };
 
     const tol = ghost.radius;
-    const gaborCanvas = createGaborCanvas(gaborSize, gaborSigma, 0, Math.PI / 4);
-
-    function createGaborCanvas(size, sigma, frequency, orientation) {
-      const offscreen = document.createElement('canvas');
-      offscreen.width = size;
-      offscreen.height = size;
-      const offctx = offscreen.getContext('2d');
-      const image = offctx.createImageData(size, size);
-      const half = size / 2;
-      const cosOri = Math.cos(orientation);
-      const sinOri = Math.sin(orientation);
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          const dx = x - half;
-          const dy = y - half;
-          const xPrime = dx * cosOri + dy * sinOri;
-          const gauss = Math.exp(-(dx * dx + dy * dy) / (2 * sigma * sigma));
-          const wave = Math.cos(2 * Math.PI * frequency * xPrime);
-          const value = Math.max(0, Math.min(255, Math.round(127 + 127 * wave)));
-          const idx = (y * size + x) * 4;
-          image.data[idx] = value;
-          image.data[idx + 1] = value;
-          image.data[idx + 2] = value;
-          image.data[idx + 3] = Math.round(255 * gauss);
-        }
-      }
-      offctx.putImageData(image, 0, 0);
-      return offscreen;
-    }
+    const ghostColor = '#f2f2f2';
+    const ghostOutline = '#d8d8d8';
+    const ghostMarker = '#d32f2f';
 
     document.addEventListener('touchstart', e => {
       if (!['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(e.target.tagName)) {
@@ -260,6 +233,7 @@
       if (rfs) rfs.call(document.documentElement);
       currentBlock = 0;
       blockErrors = [];
+      blockVariability = [];
       nextBlock();
     }
 
@@ -280,12 +254,49 @@
       requestAnimationFrame(update);
     }
 
-    function drawGabor() {
-      ctx.drawImage(
-        gaborCanvas,
-        ghost.x - gaborSize / 2,
-        ghost.y - gaborSize / 2
-      );
+    function drawGhost() {
+      const r = ghost.radius;
+      const x = ghost.x;
+      const y = ghost.y;
+      const wave = r * 0.12;
+      const bottom = y + r;
+
+      ctx.save();
+      ctx.fillStyle = ghostColor;
+      ctx.strokeStyle = ghostOutline;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, r, Math.PI, 0, false);
+      ctx.lineTo(x + r, bottom);
+      ctx.quadraticCurveTo(x + r * 0.75, bottom - wave, x + r * 0.5, bottom);
+      ctx.quadraticCurveTo(x + r * 0.25, bottom + wave, x, bottom);
+      ctx.quadraticCurveTo(x - r * 0.25, bottom + wave, x - r * 0.5, bottom);
+      ctx.quadraticCurveTo(x - r * 0.75, bottom - wave, x - r, bottom);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#1f1f1f';
+      const eyeOffsetX = r * 0.35;
+      const eyeOffsetY = r * 0.15;
+      const eyeRadius = r * 0.12;
+      ctx.beginPath();
+      ctx.arc(x - eyeOffsetX, y - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+      ctx.arc(x + eyeOffsetX, y - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Center marker for precision tracking
+      const crossSize = r * 0.16;
+      const crossY = y + r * 0.1;
+      ctx.strokeStyle = ghostMarker;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x - crossSize, crossY);
+      ctx.lineTo(x + crossSize, crossY);
+      ctx.moveTo(x, crossY - crossSize);
+      ctx.lineTo(x, crossY + crossSize);
+      ctx.stroke();
+      ctx.restore();
     }
 
     function drawCursor(x, y, inTarget) {
@@ -327,6 +338,7 @@
     let returnToCenterFrames = 0;
     let ghostAngle = Math.random() * 2 * Math.PI;
     let lastTimestamp = null;
+    let simTime = 0;
     let blockStart = 0;
 
     function update(t) {
@@ -339,10 +351,11 @@
       const rawDelta = (t - lastTimestamp) / 1000;
       const deltaTime = Math.min(rawDelta, 0.05);
       lastTimestamp = t;
+      simTime += deltaTime * 1000;
 
-      recordPointer(t);
+      recordPointer(simTime);
       const currentDelay = delaySchedule[currentBlock] || 0;
-      const delayedPointer = getDelayedPointer(t, currentDelay);
+      const delayedPointer = getDelayedPointer(simTime, currentDelay);
 
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
@@ -367,20 +380,20 @@
       if (waitingForHold) {
         const d = distance(delayedPointer, ghost);
         const inTol = d < tol;
-        drawGabor();
+        drawGhost();
         drawCursor(delayedPointer.x, delayedPointer.y, inTol);
         if (inTol) {
-          if (!holdStartTime) holdStartTime = t;
-          if (t - holdStartTime >= 1000) {
+          if (!holdStartTime) holdStartTime = simTime;
+          if (simTime - holdStartTime >= 1000) {
             waitingForHold = false;
-            blockStart = t;
+            blockStart = simTime;
           }
         } else {
           holdStartTime = null;
         }
         ctx.fillStyle = "white";
         ctx.font = "20px sans-serif";
-        ctx.fillText("Mantente sobre el parche 1 segundo para iniciar", 60, 80);
+        ctx.fillText("Mantente sobre el fantasma 1 segundo para iniciar", 60, 80);
         requestAnimationFrame(update);
         return;
       }
@@ -390,27 +403,31 @@
 
       const errX = delayedPointer.x - ghost.x;
       const errY = delayedPointer.y - ghost.y;
-      errors.push({ x: errX, y: errY });
+      errors.push({ x: errX, y: errY, dist: Math.sqrt(errX ** 2 + errY ** 2) });
 
       const errDist = distance(delayedPointer, ghost);
       const inTolerance = errDist < tol;
 
-      drawGabor();
+      drawGhost();
       drawCursor(delayedPointer.x, delayedPointer.y, inTolerance);
 
-      const elapsed = t - blockStart;
+      const elapsed = simTime - blockStart;
 
       if (elapsed < blockDuration) {
         requestAnimationFrame(update);
       } else {
-        const avgError = errors.reduce((acc, e) => acc + Math.sqrt(e.x ** 2 + e.y ** 2), 0) / errors.length;
-        blockErrors.push(Number(avgError.toFixed(1)));
+        const rmse = Math.sqrt(errors.reduce((acc, e) => acc + e.dist ** 2, 0) / errors.length);
+        const meanDist = errors.reduce((acc, e) => acc + e.dist, 0) / errors.length;
+        const variance = errors.reduce((acc, e) => acc + (e.dist - meanDist) ** 2, 0) / errors.length;
+        const sd = Math.sqrt(variance);
+        blockErrors.push(Number(rmse.toFixed(1)));
+        blockVariability.push(Number(sd.toFixed(1)));
         showBlockFeedback();
       }
     }
 
     function showBlockFeedback() {
-      feedbackDiv.innerHTML = `Bloque ${currentBlock + 1} finalizado. Error medio: ${blockErrors[currentBlock]} px.`;
+      feedbackDiv.innerHTML = `Bloque ${currentBlock + 1} finalizado. RMSE: ${blockErrors[currentBlock]} px.`;
       feedbackDiv.style.display = 'block';
       setTimeout(() => {
         feedbackDiv.style.display = 'none';
@@ -428,7 +445,7 @@
       trialCounter.style.display = 'none';
       resultsPanel.classList.remove('hidden');
       resultsSummary.innerHTML = blockErrors
-        .map((e, i) => `Bloque ${i + 1} (${delaySchedule[i] || 0} ms): ${e} px de error medio`)
+        .map((e, i) => `Bloque ${i + 1} (${delaySchedule[i] || 0} ms): RMSE ${e} px, variabilidad ${blockVariability[i]} px`)
         .join('<br>');
       drawResultsChart();
     }
@@ -440,38 +457,72 @@
       ctxr.fillRect(0, 0, resultsCanvas.width, resultsCanvas.height);
       ctxr.fillStyle = '#111111';
       ctxr.font = '16px Arial';
-      ctxr.fillText('Error medio por bloque (px)', 20, 24);
 
-      const maxError = Math.max(...blockErrors, 1);
-      const chartTop = 50;
-      const chartBottom = 340;
-      const chartHeight = chartBottom - chartTop;
-      const barWidth = 90;
-      const gap = 40;
-      const startX = 80;
+      const labels = delaySchedule.map((delay, i) => `B${i + 1} - Delay : ${delay || 0}`);
+      const paddingLeft = 70;
+      const paddingRight = 30;
+      const chartWidth = resultsCanvas.width - paddingLeft - paddingRight;
+      const barWidth = Math.max(40, Math.floor(chartWidth / (labels.length * 2)));
+      const gap = Math.max(20, Math.floor((chartWidth - barWidth * labels.length) / (labels.length - 1 || 1)));
+      const startX = paddingLeft;
+
+      const topChartTop = 40;
+      const topChartBottom = 190;
+      const bottomChartTop = 230;
+      const bottomChartBottom = 340;
+
+      ctxr.fillText('RMSE por bloque (px)', 20, 24);
+      ctxr.fillText('Variabilidad (SD) por bloque (px)', 20, 235);
+
+      const maxRmse = Math.max(...blockErrors, 1);
+      const maxVar = Math.max(...blockVariability, 1);
 
       blockErrors.forEach((val, i) => {
         const x = startX + i * (barWidth + gap);
-        const barHeight = (val / maxError) * chartHeight;
+        const h = (val / maxRmse) * (topChartBottom - topChartTop);
         ctxr.fillStyle = '#4aa3ff';
-        ctxr.fillRect(x, chartBottom - barHeight, barWidth, barHeight);
+        ctxr.fillRect(x, topChartBottom - h, barWidth, h);
         ctxr.fillStyle = '#111111';
-        ctxr.fillText(`B${i + 1}`, x + 20, chartBottom + 22);
-        ctxr.fillText(`${val} px`, x + 8, chartBottom - barHeight - 10);
+        ctxr.fillText(`${val} px`, x + 6, topChartBottom - h - 8);
+      });
+
+      blockVariability.forEach((val, i) => {
+        const x = startX + i * (barWidth + gap);
+        const h = (val / maxVar) * (bottomChartBottom - bottomChartTop);
+        ctxr.fillStyle = '#ff8a65';
+        ctxr.fillRect(x, bottomChartBottom - h, barWidth, h);
+        ctxr.fillStyle = '#111111';
+        ctxr.fillText(`${val} px`, x + 6, bottomChartBottom - h - 8);
       });
 
       ctxr.strokeStyle = '#111111';
       ctxr.beginPath();
-      ctxr.moveTo(60, chartTop);
-      ctxr.lineTo(60, chartBottom);
-      ctxr.lineTo(resultsCanvas.width - 40, chartBottom);
+      ctxr.moveTo(paddingLeft, topChartTop);
+      ctxr.lineTo(paddingLeft, topChartBottom);
+      ctxr.lineTo(resultsCanvas.width - paddingRight, topChartBottom);
+      ctxr.moveTo(paddingLeft, bottomChartTop);
+      ctxr.lineTo(paddingLeft, bottomChartBottom);
+      ctxr.lineTo(resultsCanvas.width - paddingRight, bottomChartBottom);
       ctxr.stroke();
+
+      ctxr.save();
+      ctxr.font = '12px Arial';
+      ctxr.fillStyle = '#111111';
+      labels.forEach((label, i) => {
+        const x = startX + i * (barWidth + gap) + barWidth / 2;
+        ctxr.save();
+        ctxr.translate(x, bottomChartBottom + 42);
+        ctxr.rotate(-Math.PI / 6);
+        ctxr.fillText(label, 0, 0);
+        ctxr.restore();
+      });
+      ctxr.restore();
     }
 
     function downloadCSV() {
-      const header = 'participant_id,age,sex,block,delay_ms,avg_error\n';
+      const header = 'participant_id,age,sex,block,delay_ms,rmse,sd_error\n';
       const body = blockErrors.map((err, i) => (
-        `${participant.id},${participant.age},${participant.sex},${i + 1},${delaySchedule[i] || 0},${err}`
+        `${participant.id},${participant.age},${participant.sex},${i + 1},${delaySchedule[i] || 0},${err},${blockVariability[i]}`
       )).join('\n');
       const blob = new Blob([header + body], { type: 'text/csv' });
       const link = document.createElement('a');
