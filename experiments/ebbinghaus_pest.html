@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Ilusion de Ebbinghaus - PEST</title>
+  <title>Ilusion de Ebbinghaus - Estimulos constantes</title>
   <link rel="stylesheet" href="experiment.css">
   <style>
     #experimentStage { background: #000; }
@@ -44,7 +44,7 @@
 <body class="experiment-page">
   <div class="experiment-shell">
     <section id="setup" class="panel">
-      <h1>Ilusion de Ebbinghaus (PEST)</h1>
+      <h1>Ilusion de Ebbinghaus (Estimulos constantes)</h1>
       <p>Estimacion del punto de igualdad subjetiva (PIS) con circulos rodeados por circulos grandes y pequenos.</p>
 
       <h2>Informacion del participante</h2>
@@ -81,12 +81,12 @@
     <section id="instructions" class="panel hidden">
       <h2>Instrucciones</h2>
       <ol>
-        <li>Veras dos circulos centrales: uno de referencia y otro rodeado por otros circulos.</li>
+        <li>Veras dos circulos centrales: una referencia rodeada por otros circulos y un test que aparece solo.</li>
         <li>Tu tarea es indicar cual de los dos circulos centrales te parece mas grande.</li>
         <li>Pulsa flecha izquierda/derecha o toca el area roja correspondiente.</li>
-        <li>El tamano del circulo rodeado se ajusta con el metodo PEST para estimar el PIS.</li>
+        <li>El test (circulo solo) se presenta en niveles fijos, con 5 repeticiones por nivel en cada condicion.</li>
       </ol>
-      <p class="helper-text">Mantente centrado y responde con naturalidad. El experimento alterna condiciones con circulos rodeados grandes y pequenos.</p>
+      <p class="helper-text">Mantente centrado y responde con naturalidad. Primero veras el bloque con referencia rodeada por circulos grandes y despues el bloque con circulos pequenos.</p>
       <div class="button-row">
         <button id="startButton" type="button">Comenzar experimento</button>
       </div>
@@ -139,23 +139,16 @@
   const fixationTime = 500;
   const interTrialTime = 400;
   const refSize = 60;
-  const minSize = 30;
-  const maxSize = 120;
-  const minStep = 1.5;
-  const minTrials = 24;
-  const maxTrials = 50;
-  const minReversals = 6;
+  const testLevels = [45, 50, 55, 60, 65, 70, 75];
+  const repetitionsPerLevel = 5;
 
   let participant = { id: '', age: 0, sex: '' };
   let currentTrial = null;
   let waitingResponse = false;
   let totalTrials = 0;
+  let trialSequence = [];
+  let trialIndex = 0;
   let data = [];
-
-  const staircases = {
-    small: { size: refSize, step: 10, lastDirection: 0, reversals: 0, trials: 0, done: false },
-    large: { size: refSize, step: 10, lastDirection: 0, reversals: 0, trials: 0, done: false }
-  };
 
   function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -198,6 +191,10 @@
   });
 
   startButton.addEventListener('click', () => {
+    totalTrials = 0;
+    trialIndex = 0;
+    data = [];
+    trialSequence = buildTrialSequence();
     showPanel(null);
     experimentStage.classList.add('active');
     nextTrial();
@@ -228,60 +225,73 @@
     const leftX = canvas.width * 0.34;
     const rightX = canvas.width * 0.66;
 
-    const targetX = trial.targetSide === 'left' ? leftX : rightX;
-    const refX = trial.targetSide === 'left' ? rightX : leftX;
+    const referenceX = leftX;
+    const testX = rightX;
 
-    drawCircle(refX, midY, refSize / 2, '#ffffff');
-    drawCircle(targetX, midY, trial.targetSize / 2, '#ffffff');
-    drawSurround(targetX, midY, trial.condition, trial.targetSize);
+    drawCircle(testX, midY, trial.testSize / 2, '#ffffff');
+    drawCircle(referenceX, midY, refSize / 2, '#ffffff');
+    drawSurround(referenceX, midY, trial.condition, refSize);
   }
 
   function drawCircle(x, y, radius, color) {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
+    ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.fill();
   }
 
-  function drawSurround(x, y, condition, targetSize) {
+  function drawSurround(x, y, condition, centerSize) {
     const isSmall = condition === 'small';
-    const surroundSize = isSmall ? 16 : 64;
-    const ringRadius = isSmall ? targetSize * 1.6 + 18 : targetSize * 1.6 + 30;
-    ctx.strokeStyle = '#cccccc';
-    ctx.lineWidth = 2;
+    const surroundSize = isSmall ? 24 : 64;
+    const ringRadius = isSmall ? centerSize * 1.6 + 18 : centerSize * 1.6 + 30;
+    ctx.fillStyle = '#cccccc';
     for (let i = 0; i < 8; i++) {
       const angle = (Math.PI * 2 * i) / 8;
       const sx = x + Math.cos(angle) * ringRadius;
       const sy = y + Math.sin(angle) * ringRadius;
       ctx.beginPath();
       ctx.arc(sx, sy, surroundSize / 2, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.fill();
     }
   }
 
-  function pickCondition() {
-    const available = Object.keys(staircases).filter(key => !staircases[key].done);
-    if (available.length === 0) return null;
-    return available[Math.floor(Math.random() * available.length)];
+  function buildTrialSequence() {
+    const buildBlock = (condition) => {
+      const block = [];
+      for (const testSize of testLevels) {
+        for (let rep = 1; rep <= repetitionsPerLevel; rep++) {
+          block.push({
+            condition,
+            testSide: 'right',
+            testSize,
+            repetition: rep
+          });
+        }
+      }
+      for (let i = block.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [block[i], block[j]] = [block[j], block[i]];
+      }
+      return block;
+    };
+
+    const largeBlock = buildBlock('large');
+    const smallBlock = buildBlock('small');
+    return [...largeBlock, ...smallBlock];
   }
 
   function nextTrial() {
-    const condition = pickCondition();
-    if (!condition) {
+    if (trialIndex >= trialSequence.length) {
       endExperiment();
       return;
     }
 
-    const staircase = staircases[condition];
-    const targetSide = Math.random() < 0.5 ? 'left' : 'right';
-    const targetSize = staircase.size;
-
-    currentTrial = { condition, targetSide, targetSize };
+    currentTrial = trialSequence[trialIndex];
+    trialIndex += 1;
     totalTrials += 1;
 
-    trialCounter.textContent = `${totalTrials} / ${minTrials * 2}+`;
-    conditionLabel.textContent = condition === 'small' ? 'Condicion: rodeado pequeño' : 'Condicion: rodeado grande';
+    trialCounter.textContent = `${totalTrials} / ${trialSequence.length}`;
+    conditionLabel.textContent = currentTrial.condition === 'small' ? 'Condicion: rodeado pequeno' : 'Condicion: rodeado grande';
 
     waitingResponse = false;
     responseButtons.style.display = 'none';
@@ -299,46 +309,24 @@
     waitingResponse = false;
     responseButtons.style.display = 'none';
 
-    const targetChosen = side === currentTrial.targetSide;
-    const staircase = staircases[currentTrial.condition];
-    updateStaircase(staircase, targetChosen);
+    const testChosen = side === currentTrial.testSide;
 
     data.push({
       participantId: participant.id,
       age: participant.age,
       sex: participant.sex,
+      trial: totalTrials,
       condition: currentTrial.condition,
-      targetSide: currentTrial.targetSide,
-      targetSize: currentTrial.targetSize,
-      responseTargetLarger: targetChosen ? 1 : 0,
-      step: staircase.step,
-      reversals: staircase.reversals,
+      testSide: currentTrial.testSide,
+      testSize: currentTrial.testSize,
+      repetition: currentTrial.repetition,
+      responseTestLarger: testChosen ? 1 : 0,
       timestamp: new Date().toISOString()
     });
 
     setTimeout(() => {
-      if (staircases[currentTrial.condition].done) {
-        conditionLabel.textContent = 'Condicion completada';
-      }
       nextTrial();
     }, interTrialTime);
-  }
-
-  function updateStaircase(staircase, targetChosen) {
-    const direction = targetChosen ? -1 : 1;
-    if (staircase.lastDirection !== 0 && direction !== staircase.lastDirection) {
-      staircase.reversals += 1;
-      staircase.step = Math.max(minStep, staircase.step / 2);
-    }
-    staircase.lastDirection = direction;
-    staircase.size = clamp(staircase.size + direction * staircase.step, minSize, maxSize);
-    staircase.trials += 1;
-    if (staircase.trials >= minTrials && staircase.step <= minStep && staircase.reversals >= minReversals) {
-      staircase.done = true;
-    }
-    if (staircase.trials >= maxTrials) {
-      staircase.done = true;
-    }
   }
 
   function clamp(value, min, max) {
@@ -357,7 +345,7 @@
 
   function fitPsychometric(conditionData) {
     if (conditionData.length < 6) return null;
-    const sizes = conditionData.map(d => d.targetSize);
+    const sizes = conditionData.map(d => d.testSize);
     const minX = Math.min(...sizes) - 10;
     const maxX = Math.max(...sizes) + 10;
 
@@ -387,9 +375,9 @@
   function negLogLikelihood(conditionData, mu, sigma) {
     let sum = 0;
     for (const trial of conditionData) {
-      let p = logistic(trial.targetSize, mu, sigma);
+      let p = logistic(trial.testSize, mu, sigma);
       p = clamp(p, 0.000001, 0.999999);
-      const y = trial.responseTargetLarger;
+      const y = trial.responseTestLarger;
       sum -= y * Math.log(p) + (1 - y) * Math.log(1 - p);
     }
     return sum;
@@ -398,13 +386,13 @@
   function binData(conditionData) {
     const bins = new Map();
     for (const trial of conditionData) {
-      const key = Math.round(trial.targetSize);
+      const key = Math.round(trial.testSize);
       if (!bins.has(key)) {
         bins.set(key, { size: key, count: 0, sum: 0 });
       }
       const entry = bins.get(key);
       entry.count += 1;
-      entry.sum += trial.responseTargetLarger;
+      entry.sum += trial.responseTestLarger;
     }
     return Array.from(bins.values())
       .map(b => ({ size: b.size, p: b.sum / b.count }))
@@ -418,15 +406,33 @@
     const fitLarge = fitPsychometric(largeData);
 
     let html = '<h3>Resumen</h3><ul>';
+    const explainPis = (conditionText, mu) => {
+      const delta = mu - refSize;
+      const absDelta = Math.abs(delta).toFixed(1);
+      let relationText = `practicamente no cambia (0 px)`;
+      if (delta > 0) {
+        relationText = `${absDelta} px mas grande`;
+      } else if (delta < 0) {
+        relationText = `${absDelta} px mas pequeno`;
+      }
+      return `Cuando el circulo de referencia (izquierda) esta ${conditionText}, el estimulo de comparacion (derecha) tiene que ser de ${mu.toFixed(1)} px. Esto nos indica que para percibirse como iguales el estimulo de comparacion tiene que ser ${relationText}.`;
+    };
     if (fitSmall) {
       html += `<li>PIS (rodeado pequeno): ${fitSmall.mu.toFixed(1)} px</li>`;
+      html += `<li>Implicacion (rodeado pequeno): ${explainPis('rodeado de circulos pequenos', fitSmall.mu)}</li>`;
     } else {
       html += '<li>PIS (rodeado pequeno): datos insuficientes</li>';
     }
     if (fitLarge) {
       html += `<li>PIS (rodeado grande): ${fitLarge.mu.toFixed(1)} px</li>`;
+      html += `<li>Implicacion (rodeado grande): ${explainPis('rodeado de circulos grandes', fitLarge.mu)}</li>`;
     } else {
       html += '<li>PIS (rodeado grande): datos insuficientes</li>';
+    }
+    if (fitSmall && fitLarge) {
+      const diff = fitLarge.mu - fitSmall.mu;
+      const signText = diff >= 0 ? '+' : '';
+      html += `<li>Diferencia entre contextos (grande - pequeno): ${signText}${diff.toFixed(1)} px. Un valor positivo indica mayor reduccion perceptiva en la condicion rodeada por circulos grandes.</li>`;
     }
     html += '</ul>';
     resultsSummary.innerHTML = html;
@@ -439,9 +445,10 @@
     resultsCtx.fillStyle = '#ffffff';
     resultsCtx.fillRect(0, 0, resultsCanvas.width, resultsCanvas.height);
 
-    const allSizes = data.map(d => d.targetSize);
+    const allSizes = data.map(d => d.testSize);
     const minX = Math.min(...allSizes, refSize) - 5;
     const maxX = Math.max(...allSizes, refSize) + 5;
+    const spanX = Math.max(1, maxX - minX);
 
     const plot = { x: 70, y: 30, w: resultsCanvas.width - 110, h: resultsCanvas.height - 80 };
     resultsCtx.strokeStyle = '#111111';
@@ -450,10 +457,12 @@
 
     resultsCtx.fillStyle = '#111111';
     resultsCtx.font = '14px Arial';
-    resultsCtx.fillText('Probabilidad (elige circulo rodeado como mayor)', plot.x, plot.y - 8);
+    resultsCtx.fillText('Probabilidad (elige test solo como mayor)', plot.x, plot.y - 8);
 
     const yToPix = (p) => plot.y + plot.h - p * plot.h;
-    const xToPix = (x) => plot.x + ((x - minX) / (maxX - minX)) * plot.w;
+    const xToPix = (x) => plot.x + ((x - minX) / spanX) * plot.w;
+
+    drawAxisTicks();
 
     resultsCtx.strokeStyle = '#aaaaaa';
     resultsCtx.beginPath();
@@ -469,9 +478,10 @@
 
     drawPointsAndCurve(smallData, fitSmall, '#ff6b6b');
     drawPointsAndCurve(largeData, fitLarge, '#4aa3ff');
+    drawLegend();
 
     resultsCtx.fillStyle = '#111111';
-    resultsCtx.fillText('Tamano fisico del circulo rodeado (px)', plot.x, plot.y + plot.h + 30);
+    resultsCtx.fillText('Tamano fisico del test (circulo solo) (px)', plot.x, plot.y + plot.h + 30);
 
     function drawPointsAndCurve(conditionData, fit, color) {
       if (!conditionData.length) return;
@@ -495,6 +505,66 @@
       }
       resultsCtx.stroke();
     }
+
+    function drawAxisTicks() {
+      resultsCtx.strokeStyle = '#333333';
+      resultsCtx.fillStyle = '#333333';
+      resultsCtx.lineWidth = 1;
+      resultsCtx.font = '12px Arial';
+
+      const yTicks = [0, 0.25, 0.5, 0.75, 1];
+      for (const p of yTicks) {
+        const y = yToPix(p);
+        resultsCtx.beginPath();
+        resultsCtx.moveTo(plot.x - 6, y);
+        resultsCtx.lineTo(plot.x, y);
+        resultsCtx.stroke();
+        resultsCtx.fillText(p.toFixed(2), plot.x - 42, y + 4);
+      }
+
+      const xTickCount = 8;
+      for (let i = 0; i <= xTickCount; i++) {
+        const value = minX + (spanX * i) / xTickCount;
+        const px = xToPix(value);
+        resultsCtx.beginPath();
+        resultsCtx.moveTo(px, plot.y + plot.h);
+        resultsCtx.lineTo(px, plot.y + plot.h + 6);
+        resultsCtx.stroke();
+        resultsCtx.fillText(Math.round(value).toString(), px - 10, plot.y + plot.h + 20);
+      }
+    }
+
+    function drawLegend() {
+      const legendX = plot.x + plot.w - 220;
+      const legendY = plot.y + 14;
+      const rowGap = 24;
+
+      resultsCtx.fillStyle = '#111111';
+      resultsCtx.font = '12px Arial';
+      resultsCtx.fillText('Leyenda:', legendX, legendY);
+
+      const items = [
+        { color: '#4aa3ff', label: 'Rodeado grande' },
+        { color: '#ff6b6b', label: 'Rodeado pequeno' }
+      ];
+
+      items.forEach((item, idx) => {
+        const y = legendY + 14 + rowGap * (idx + 1);
+        resultsCtx.strokeStyle = item.color;
+        resultsCtx.fillStyle = item.color;
+        resultsCtx.lineWidth = 2;
+        resultsCtx.beginPath();
+        resultsCtx.moveTo(legendX, y - 4);
+        resultsCtx.lineTo(legendX + 24, y - 4);
+        resultsCtx.stroke();
+        resultsCtx.beginPath();
+        resultsCtx.arc(legendX + 12, y - 4, 4, 0, Math.PI * 2);
+        resultsCtx.fill();
+
+        resultsCtx.fillStyle = '#111111';
+        resultsCtx.fillText(item.label, legendX + 32, y);
+      });
+    }
   }
 
   function downloadCsv() {
@@ -508,7 +578,7 @@
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `ebbinghaus_pest_${participant.id}.csv`;
+    link.download = `ebbinghaus_constantes_${participant.id}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
