@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ilusion de Ebbinghaus - PEST</title>
+  <link rel="stylesheet" href="experiment.css">
+  <style>
+    #experimentStage { background: #000; }
+
+    #stimulusCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #response-buttons {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 22%;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .button-area {
+      width: 42%;
+      height: 100%;
+      background-color: #8b0000;
+      opacity: 0.82;
+      margin: 0 4%;
+      border-radius: 12px;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    .button-area:active { opacity: 1; }
+  </style>
+</head>
+<body class="experiment-page">
+  <div class="experiment-shell">
+    <section id="setup" class="panel">
+      <h1>Ilusion de Ebbinghaus (PEST)</h1>
+      <p>Estimacion del punto de igualdad subjetiva (PIS) con circulos rodeados por circulos grandes y pequenos.</p>
+
+      <h2>Informacion del participante</h2>
+      <div class="form-grid">
+        <label>ID participante
+          <input id="participantId" type="text" autocomplete="off">
+        </label>
+        <label>Edad
+          <input id="participantAge" type="number" min="0" inputmode="numeric">
+        </label>
+        <label>Sexo
+          <select id="participantSex">
+            <option value="">Selecciona</option>
+            <option>Femenino</option>
+            <option>Masculino</option>
+            <option>Otro</option>
+            <option>Prefiero no decirlo</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="continueButton" type="button">Continuar</button>
+      </div>
+    </section>
+
+    <section id="preInstructions" class="panel intermediate-panel hidden">
+      <p class="intermediate-message">A continuacion apareceran las instrucciones.</p>
+      <div class="button-row">
+        <button id="showInstructionsButton" type="button">Ver instrucciones</button>
+      </div>
+    </section>
+
+    <section id="instructions" class="panel hidden">
+      <h2>Instrucciones</h2>
+      <ol>
+        <li>Veras dos circulos centrales: uno de referencia y otro rodeado por otros circulos.</li>
+        <li>Tu tarea es indicar cual de los dos circulos centrales te parece mas grande.</li>
+        <li>Pulsa flecha izquierda/derecha o toca el area roja correspondiente.</li>
+        <li>El tamano del circulo rodeado se ajusta con el metodo PEST para estimar el PIS.</li>
+      </ol>
+      <p class="helper-text">Mantente centrado y responde con naturalidad. El experimento alterna condiciones con circulos rodeados grandes y pequenos.</p>
+      <div class="button-row">
+        <button id="startButton" type="button">Comenzar experimento</button>
+      </div>
+    </section>
+
+    <section id="experimentStage" class="experiment-stage">
+      <div id="trialCounter">0/0</div>
+      <div id="conditionLabel" class="loop-label"></div>
+      <canvas id="stimulusCanvas"></canvas>
+      <div id="response-buttons">
+        <div id="left-button" class="button-area"></div>
+        <div id="right-button" class="button-area"></div>
+      </div>
+    </section>
+
+    <section id="results" class="results-panel hidden">
+      <h2>Resultados</h2>
+      <div id="resultsSummary"></div>
+      <div class="button-row">
+        <button id="downloadCsv" type="button">Descargar CSV</button>
+      </div>
+      <div class="graph-wrap">
+        <canvas id="resultsCanvas" width="700" height="420"></canvas>
+      </div>
+    </section>
+  </div>
+
+<script>
+  const setupPanel = document.getElementById('setup');
+  const preInstructionsPanel = document.getElementById('preInstructions');
+  const instructionsPanel = document.getElementById('instructions');
+  const experimentStage = document.getElementById('experimentStage');
+  const resultsPanel = document.getElementById('results');
+  const resultsSummary = document.getElementById('resultsSummary');
+  const trialCounter = document.getElementById('trialCounter');
+  const conditionLabel = document.getElementById('conditionLabel');
+  const startButton = document.getElementById('startButton');
+  const continueButton = document.getElementById('continueButton');
+  const showInstructionsButton = document.getElementById('showInstructionsButton');
+  const downloadButton = document.getElementById('downloadCsv');
+  const responseButtons = document.getElementById('response-buttons');
+  const leftButton = document.getElementById('left-button');
+  const rightButton = document.getElementById('right-button');
+
+  const canvas = document.getElementById('stimulusCanvas');
+  const ctx = canvas.getContext('2d');
+  const resultsCanvas = document.getElementById('resultsCanvas');
+  const resultsCtx = resultsCanvas.getContext('2d');
+
+  const fixationTime = 500;
+  const interTrialTime = 400;
+  const refSize = 60;
+  const minSize = 30;
+  const maxSize = 120;
+  const minStep = 1.5;
+  const minTrials = 24;
+  const maxTrials = 50;
+  const minReversals = 6;
+
+  let participant = { id: '', age: 0, sex: '' };
+  let currentTrial = null;
+  let waitingResponse = false;
+  let totalTrials = 0;
+  let data = [];
+
+  const staircases = {
+    small: { size: refSize, step: 10, lastDirection: 0, reversals: 0, trials: 0, done: false },
+    large: { size: refSize, step: 10, lastDirection: 0, reversals: 0, trials: 0, done: false }
+  };
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    if (waitingResponse && currentTrial) {
+      drawStimulus(currentTrial);
+    } else {
+      clearCanvas();
+    }
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function validateParticipant() {
+    const id = document.getElementById('participantId').value.trim();
+    const age = document.getElementById('participantAge').value;
+    const sex = document.getElementById('participantSex').value;
+    if (!id || !age || !sex) {
+      alert('Completa ID, edad y sexo para continuar.');
+      return null;
+    }
+    return { id, age: Number(age), sex };
+  }
+
+  function showPanel(panel) {
+    [setupPanel, preInstructionsPanel, instructionsPanel, resultsPanel].forEach(p => p.classList.add('hidden'));
+    if (panel) panel.classList.remove('hidden');
+  }
+
+  continueButton.addEventListener('click', () => {
+    const info = validateParticipant();
+    if (!info) return;
+    participant = info;
+    showPanel(preInstructionsPanel);
+  });
+
+  showInstructionsButton.addEventListener('click', () => {
+    showPanel(instructionsPanel);
+  });
+
+  startButton.addEventListener('click', () => {
+    showPanel(null);
+    experimentStage.classList.add('active');
+    nextTrial();
+  });
+
+  function clearCanvas() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function drawFixation() {
+    clearCanvas();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 4;
+    const x = canvas.width / 2;
+    const y = canvas.height / 2;
+    ctx.beginPath();
+    ctx.moveTo(x - 20, y);
+    ctx.lineTo(x + 20, y);
+    ctx.moveTo(x, y - 20);
+    ctx.lineTo(x, y + 20);
+    ctx.stroke();
+  }
+
+  function drawStimulus(trial) {
+    clearCanvas();
+    const midY = canvas.height / 2;
+    const leftX = canvas.width * 0.34;
+    const rightX = canvas.width * 0.66;
+
+    const targetX = trial.targetSide === 'left' ? leftX : rightX;
+    const refX = trial.targetSide === 'left' ? rightX : leftX;
+
+    drawCircle(refX, midY, refSize / 2, '#ffffff');
+    drawCircle(targetX, midY, trial.targetSize / 2, '#ffffff');
+    drawSurround(targetX, midY, trial.condition, trial.targetSize);
+  }
+
+  function drawCircle(x, y, radius, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  function drawSurround(x, y, condition, targetSize) {
+    const isSmall = condition === 'small';
+    const surroundSize = isSmall ? 16 : 64;
+    const ringRadius = isSmall ? targetSize * 1.6 + 18 : targetSize * 1.6 + 30;
+    ctx.strokeStyle = '#cccccc';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 8; i++) {
+      const angle = (Math.PI * 2 * i) / 8;
+      const sx = x + Math.cos(angle) * ringRadius;
+      const sy = y + Math.sin(angle) * ringRadius;
+      ctx.beginPath();
+      ctx.arc(sx, sy, surroundSize / 2, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  function pickCondition() {
+    const available = Object.keys(staircases).filter(key => !staircases[key].done);
+    if (available.length === 0) return null;
+    return available[Math.floor(Math.random() * available.length)];
+  }
+
+  function nextTrial() {
+    const condition = pickCondition();
+    if (!condition) {
+      endExperiment();
+      return;
+    }
+
+    const staircase = staircases[condition];
+    const targetSide = Math.random() < 0.5 ? 'left' : 'right';
+    const targetSize = staircase.size;
+
+    currentTrial = { condition, targetSide, targetSize };
+    totalTrials += 1;
+
+    trialCounter.textContent = `${totalTrials} / ${minTrials * 2}+`;
+    conditionLabel.textContent = condition === 'small' ? 'Condicion: rodeado pequeño' : 'Condicion: rodeado grande';
+
+    waitingResponse = false;
+    responseButtons.style.display = 'none';
+    drawFixation();
+
+    setTimeout(() => {
+      waitingResponse = true;
+      responseButtons.style.display = 'flex';
+      drawStimulus(currentTrial);
+    }, fixationTime);
+  }
+
+  function handleResponse(side) {
+    if (!waitingResponse || !currentTrial) return;
+    waitingResponse = false;
+    responseButtons.style.display = 'none';
+
+    const targetChosen = side === currentTrial.targetSide;
+    const staircase = staircases[currentTrial.condition];
+    updateStaircase(staircase, targetChosen);
+
+    data.push({
+      participantId: participant.id,
+      age: participant.age,
+      sex: participant.sex,
+      condition: currentTrial.condition,
+      targetSide: currentTrial.targetSide,
+      targetSize: currentTrial.targetSize,
+      responseTargetLarger: targetChosen ? 1 : 0,
+      step: staircase.step,
+      reversals: staircase.reversals,
+      timestamp: new Date().toISOString()
+    });
+
+    setTimeout(() => {
+      if (staircases[currentTrial.condition].done) {
+        conditionLabel.textContent = 'Condicion completada';
+      }
+      nextTrial();
+    }, interTrialTime);
+  }
+
+  function updateStaircase(staircase, targetChosen) {
+    const direction = targetChosen ? -1 : 1;
+    if (staircase.lastDirection !== 0 && direction !== staircase.lastDirection) {
+      staircase.reversals += 1;
+      staircase.step = Math.max(minStep, staircase.step / 2);
+    }
+    staircase.lastDirection = direction;
+    staircase.size = clamp(staircase.size + direction * staircase.step, minSize, maxSize);
+    staircase.trials += 1;
+    if (staircase.trials >= minTrials && staircase.step <= minStep && staircase.reversals >= minReversals) {
+      staircase.done = true;
+    }
+    if (staircase.trials >= maxTrials) {
+      staircase.done = true;
+    }
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function endExperiment() {
+    experimentStage.classList.remove('active');
+    showPanel(resultsPanel);
+    renderResults();
+  }
+
+  function logistic(x, mu, sigma) {
+    return 1 / (1 + Math.exp(-(x - mu) / sigma));
+  }
+
+  function fitPsychometric(conditionData) {
+    if (conditionData.length < 6) return null;
+    const sizes = conditionData.map(d => d.targetSize);
+    const minX = Math.min(...sizes) - 10;
+    const maxX = Math.max(...sizes) + 10;
+
+    let best = { mu: refSize, sigma: 10, nll: Infinity };
+    for (let mu = minX; mu <= maxX; mu += 1) {
+      for (let sigma = 2; sigma <= 40; sigma += 1) {
+        const nll = negLogLikelihood(conditionData, mu, sigma);
+        if (nll < best.nll) {
+          best = { mu, sigma, nll };
+        }
+      }
+    }
+
+    let refined = best;
+    for (let mu = best.mu - 2; mu <= best.mu + 2; mu += 0.2) {
+      for (let sigma = Math.max(1, best.sigma - 2); sigma <= best.sigma + 2; sigma += 0.2) {
+        const nll = negLogLikelihood(conditionData, mu, sigma);
+        if (nll < refined.nll) {
+          refined = { mu, sigma, nll };
+        }
+      }
+    }
+
+    return refined;
+  }
+
+  function negLogLikelihood(conditionData, mu, sigma) {
+    let sum = 0;
+    for (const trial of conditionData) {
+      let p = logistic(trial.targetSize, mu, sigma);
+      p = clamp(p, 0.000001, 0.999999);
+      const y = trial.responseTargetLarger;
+      sum -= y * Math.log(p) + (1 - y) * Math.log(1 - p);
+    }
+    return sum;
+  }
+
+  function binData(conditionData) {
+    const bins = new Map();
+    for (const trial of conditionData) {
+      const key = Math.round(trial.targetSize);
+      if (!bins.has(key)) {
+        bins.set(key, { size: key, count: 0, sum: 0 });
+      }
+      const entry = bins.get(key);
+      entry.count += 1;
+      entry.sum += trial.responseTargetLarger;
+    }
+    return Array.from(bins.values())
+      .map(b => ({ size: b.size, p: b.sum / b.count }))
+      .sort((a, b) => a.size - b.size);
+  }
+
+  function renderResults() {
+    const smallData = data.filter(d => d.condition === 'small');
+    const largeData = data.filter(d => d.condition === 'large');
+    const fitSmall = fitPsychometric(smallData);
+    const fitLarge = fitPsychometric(largeData);
+
+    let html = '<h3>Resumen</h3><ul>';
+    if (fitSmall) {
+      html += `<li>PIS (rodeado pequeno): ${fitSmall.mu.toFixed(1)} px</li>`;
+    } else {
+      html += '<li>PIS (rodeado pequeno): datos insuficientes</li>';
+    }
+    if (fitLarge) {
+      html += `<li>PIS (rodeado grande): ${fitLarge.mu.toFixed(1)} px</li>`;
+    } else {
+      html += '<li>PIS (rodeado grande): datos insuficientes</li>';
+    }
+    html += '</ul>';
+    resultsSummary.innerHTML = html;
+
+    drawPsychometricPlot({ smallData, largeData, fitSmall, fitLarge });
+  }
+
+  function drawPsychometricPlot({ smallData, largeData, fitSmall, fitLarge }) {
+    resultsCtx.clearRect(0, 0, resultsCanvas.width, resultsCanvas.height);
+    resultsCtx.fillStyle = '#ffffff';
+    resultsCtx.fillRect(0, 0, resultsCanvas.width, resultsCanvas.height);
+
+    const allSizes = data.map(d => d.targetSize);
+    const minX = Math.min(...allSizes, refSize) - 5;
+    const maxX = Math.max(...allSizes, refSize) + 5;
+
+    const plot = { x: 70, y: 30, w: resultsCanvas.width - 110, h: resultsCanvas.height - 80 };
+    resultsCtx.strokeStyle = '#111111';
+    resultsCtx.lineWidth = 1.5;
+    resultsCtx.strokeRect(plot.x, plot.y, plot.w, plot.h);
+
+    resultsCtx.fillStyle = '#111111';
+    resultsCtx.font = '14px Arial';
+    resultsCtx.fillText('Probabilidad (elige circulo rodeado como mayor)', plot.x, plot.y - 8);
+
+    const yToPix = (p) => plot.y + plot.h - p * plot.h;
+    const xToPix = (x) => plot.x + ((x - minX) / (maxX - minX)) * plot.w;
+
+    resultsCtx.strokeStyle = '#aaaaaa';
+    resultsCtx.beginPath();
+    resultsCtx.moveTo(plot.x, yToPix(0.5));
+    resultsCtx.lineTo(plot.x + plot.w, yToPix(0.5));
+    resultsCtx.stroke();
+
+    resultsCtx.strokeStyle = '#555555';
+    resultsCtx.beginPath();
+    resultsCtx.moveTo(xToPix(refSize), plot.y);
+    resultsCtx.lineTo(xToPix(refSize), plot.y + plot.h);
+    resultsCtx.stroke();
+
+    drawPointsAndCurve(smallData, fitSmall, '#ff6b6b');
+    drawPointsAndCurve(largeData, fitLarge, '#4aa3ff');
+
+    resultsCtx.fillStyle = '#111111';
+    resultsCtx.fillText('Tamano fisico del circulo rodeado (px)', plot.x, plot.y + plot.h + 30);
+
+    function drawPointsAndCurve(conditionData, fit, color) {
+      if (!conditionData.length) return;
+      const binned = binData(conditionData);
+      resultsCtx.fillStyle = color;
+      for (const point of binned) {
+        resultsCtx.beginPath();
+        resultsCtx.arc(xToPix(point.size), yToPix(point.p), 5, 0, Math.PI * 2);
+        resultsCtx.fill();
+      }
+      if (!fit) return;
+      resultsCtx.strokeStyle = color;
+      resultsCtx.lineWidth = 2;
+      resultsCtx.beginPath();
+      for (let x = minX; x <= maxX; x += 0.5) {
+        const p = logistic(x, fit.mu, fit.sigma);
+        const px = xToPix(x);
+        const py = yToPix(p);
+        if (x === minX) resultsCtx.moveTo(px, py);
+        else resultsCtx.lineTo(px, py);
+      }
+      resultsCtx.stroke();
+    }
+  }
+
+  function downloadCsv() {
+    if (!data.length) return;
+    const headers = Object.keys(data[0]);
+    const rows = [headers.join(',')];
+    for (const row of data) {
+      rows.push(headers.map(h => row[h]).join(','));
+    }
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ebbinghaus_pest_${participant.id}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowLeft') handleResponse('left');
+    if (event.key === 'ArrowRight') handleResponse('right');
+  });
+
+  leftButton.addEventListener('click', () => handleResponse('left'));
+  rightButton.addEventListener('click', () => handleResponse('right'));
+  downloadButton.addEventListener('click', downloadCsv);
+</script>
+</body>
+</html>
