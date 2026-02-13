@@ -81,12 +81,12 @@
     <section id="instructions" class="panel hidden">
       <h2>Instrucciones</h2>
       <ol>
-        <li>Veras dos circulos centrales: una referencia rodeada por otros circulos y un test que aparece solo.</li>
-        <li>Tu tarea es indicar cual de los dos circulos centrales te parece mas grande.</li>
-        <li>Pulsa flecha izquierda/derecha o toca el area roja correspondiente.</li>
-        <li>El test (circulo solo) se presenta en niveles fijos, con 5 repeticiones por nivel en cada condicion.</li>
+        <li>En cada ensayo veras dos circulos en el centro de la pantalla.</li>
+        <li>Tu tarea es elegir cual de los dos te parece mas grande.</li>
+        <li>Si crees que es el de la izquierda, pulsa flecha izquierda o toca la zona roja izquierda.</li>
+        <li>Si crees que es el de la derecha, pulsa flecha derecha o toca la zona roja derecha.</li>
       </ol>
-      <p class="helper-text">Mantente centrado y responde con naturalidad. Primero veras el bloque con referencia rodeada por circulos grandes y despues el bloque con circulos pequenos.</p>
+      <p class="helper-text">Mira al centro, responde de forma natural y no pienses demasiado cada respuesta.</p>
       <div class="button-row">
         <button id="startButton" type="button">Comenzar experimento</button>
       </div>
@@ -139,8 +139,8 @@
   const fixationTime = 500;
   const interTrialTime = 400;
   const refSize = 60;
-  const testLevels = [45, 50, 55, 60, 65, 70, 75];
-  const repetitionsPerLevel = 5;
+  const testLevels = [50, 54, 58, 62, 66, 70];
+  const repetitionsPerLevel = 8;
 
   let participant = { id: '', age: 0, sex: '' };
   let currentTrial = null;
@@ -225,8 +225,8 @@
     const leftX = canvas.width * 0.34;
     const rightX = canvas.width * 0.66;
 
-    const referenceX = leftX;
-    const testX = rightX;
+    const referenceX = trial.testSide === 'right' ? leftX : rightX;
+    const testX = trial.testSide === 'right' ? rightX : leftX;
 
     drawCircle(testX, midY, trial.testSize / 2, '#ffffff');
     drawCircle(referenceX, midY, refSize / 2, '#ffffff');
@@ -243,7 +243,16 @@
   function drawSurround(x, y, condition, centerSize) {
     const isSmall = condition === 'small';
     const surroundSize = isSmall ? 24 : 64;
-    const ringRadius = isSmall ? centerSize * 1.6 + 18 : centerSize * 1.6 + 30;
+    const centerRadius = centerSize / 2;
+    const surroundRadius = surroundSize / 2;
+    const edgeGap = isSmall ? 14 : 10;
+    const desiredNeighborGap = isSmall ? 4 : 3;
+    const minRadiusForNeighborGap =
+      (2 * surroundRadius + desiredNeighborGap) / (2 * Math.sin(Math.PI / 8));
+    const ringRadius = Math.max(
+      centerRadius + surroundRadius + edgeGap,
+      minRadiusForNeighborGap
+    );
     ctx.fillStyle = '#cccccc';
     for (let i = 0; i < 8; i++) {
       const angle = (Math.PI * 2 * i) / 8;
@@ -256,28 +265,24 @@
   }
 
   function buildTrialSequence() {
-    const buildBlock = (condition) => {
-      const block = [];
+    const sequence = [];
+    for (const condition of ['large', 'small']) {
       for (const testSize of testLevels) {
         for (let rep = 1; rep <= repetitionsPerLevel; rep++) {
-          block.push({
+          sequence.push({
             condition,
-            testSide: 'right',
+            testSide: Math.random() < 0.5 ? 'left' : 'right',
             testSize,
             repetition: rep
           });
         }
       }
-      for (let i = block.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [block[i], block[j]] = [block[j], block[i]];
-      }
-      return block;
-    };
-
-    const largeBlock = buildBlock('large');
-    const smallBlock = buildBlock('small');
-    return [...largeBlock, ...smallBlock];
+    }
+    for (let i = sequence.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [sequence[i], sequence[j]] = [sequence[j], sequence[i]];
+    }
+    return sequence;
   }
 
   function nextTrial() {
@@ -405,34 +410,27 @@
     const fitSmall = fitPsychometric(smallData);
     const fitLarge = fitPsychometric(largeData);
 
-    let html = '<h3>Resumen</h3><ul>';
+    let html = '<ul>';
     const explainPis = (conditionText, mu) => {
       const delta = mu - refSize;
-      const absDelta = Math.abs(delta).toFixed(1);
-      let relationText = `practicamente no cambia (0 px)`;
-      if (delta > 0) {
-        relationText = `${absDelta} px mas grande`;
-      } else if (delta < 0) {
-        relationText = `${absDelta} px mas pequeno`;
+      const absDelta = Math.abs(delta);
+      let relationText = 'prácticamente igual al tamaño real de referencia';
+      if (delta > 0.15) {
+        relationText = `${absDelta.toFixed(1)} px más grande que la referencia real`;
+      } else if (delta < -0.15) {
+        relationText = `${absDelta.toFixed(1)} px más pequeño que la referencia real`;
       }
-      return `Cuando el circulo de referencia (izquierda) esta ${conditionText}, el estimulo de comparacion (derecha) tiene que ser de ${mu.toFixed(1)} px. Esto nos indica que para percibirse como iguales el estimulo de comparacion tiene que ser ${relationText}.`;
+      return `Cuando el círculo central está ${conditionText}, el estímulo de comparación debe medir ${mu.toFixed(1)} px para que ambos parezcan iguales (${relationText}).`;
     };
     if (fitSmall) {
-      html += `<li>PIS (rodeado pequeno): ${fitSmall.mu.toFixed(1)} px</li>`;
-      html += `<li>Implicacion (rodeado pequeno): ${explainPis('rodeado de circulos pequenos', fitSmall.mu)}</li>`;
+      html += `<li><span style="color:#ff6b6b;font-weight:700;">Rodeado de círculos pequeños:</span> ${explainPis('rodeado de círculos pequeños', fitSmall.mu)}</li>`;
     } else {
-      html += '<li>PIS (rodeado pequeno): datos insuficientes</li>';
+      html += '<li><span style="color:#ff6b6b;font-weight:700;">Rodeado de círculos pequeños:</span> datos insuficientes para estimar el PIS.</li>';
     }
     if (fitLarge) {
-      html += `<li>PIS (rodeado grande): ${fitLarge.mu.toFixed(1)} px</li>`;
-      html += `<li>Implicacion (rodeado grande): ${explainPis('rodeado de circulos grandes', fitLarge.mu)}</li>`;
+      html += `<li><span style="color:#4aa3ff;font-weight:700;">Rodeado de círculos grandes:</span> ${explainPis('rodeado de círculos grandes', fitLarge.mu)}</li>`;
     } else {
-      html += '<li>PIS (rodeado grande): datos insuficientes</li>';
-    }
-    if (fitSmall && fitLarge) {
-      const diff = fitLarge.mu - fitSmall.mu;
-      const signText = diff >= 0 ? '+' : '';
-      html += `<li>Diferencia entre contextos (grande - pequeno): ${signText}${diff.toFixed(1)} px. Un valor positivo indica mayor reduccion perceptiva en la condicion rodeada por circulos grandes.</li>`;
+      html += '<li><span style="color:#4aa3ff;font-weight:700;">Rodeado de círculos grandes:</span> datos insuficientes para estimar el PIS.</li>';
     }
     html += '</ul>';
     resultsSummary.innerHTML = html;
@@ -457,7 +455,6 @@
 
     resultsCtx.fillStyle = '#111111';
     resultsCtx.font = '14px Arial';
-    resultsCtx.fillText('Probabilidad (elige test solo como mayor)', plot.x, plot.y - 8);
 
     const yToPix = (p) => plot.y + plot.h - p * plot.h;
     const xToPix = (x) => plot.x + ((x - minX) / spanX) * plot.w;
@@ -475,13 +472,23 @@
     resultsCtx.moveTo(xToPix(refSize), plot.y);
     resultsCtx.lineTo(xToPix(refSize), plot.y + plot.h);
     resultsCtx.stroke();
+    resultsCtx.save();
+    resultsCtx.fillStyle = '#333333';
+    resultsCtx.font = '12px Arial';
+    resultsCtx.translate(xToPix(refSize) + 10, plot.y + plot.h / 2);
+    resultsCtx.rotate(-Math.PI / 2);
+    resultsCtx.textAlign = 'center';
+    resultsCtx.textBaseline = 'middle';
+    resultsCtx.fillText('Estimulo de referencia', 0, 0);
+    resultsCtx.restore();
+
+    drawPisLine(fitSmall, '#ff6b6b');
+    drawPisLine(fitLarge, '#4aa3ff');
 
     drawPointsAndCurve(smallData, fitSmall, '#ff6b6b');
     drawPointsAndCurve(largeData, fitLarge, '#4aa3ff');
-    drawLegend();
 
-    resultsCtx.fillStyle = '#111111';
-    resultsCtx.fillText('Tamano fisico del test (circulo solo) (px)', plot.x, plot.y + plot.h + 30);
+    drawAxisLabels();
 
     function drawPointsAndCurve(conditionData, fit, color) {
       if (!conditionData.length) return;
@@ -534,37 +541,40 @@
       }
     }
 
-    function drawLegend() {
-      const legendX = plot.x + plot.w - 220;
-      const legendY = plot.y + 14;
-      const rowGap = 24;
+    function drawAxisLabels() {
+      const xLabel = 'Tamaño físico del estímulo de comparación (px)';
+      const yLabel = 'Probabilidad de elegir comparación';
 
       resultsCtx.fillStyle = '#111111';
-      resultsCtx.font = '12px Arial';
-      resultsCtx.fillText('Leyenda:', legendX, legendY);
+      resultsCtx.font = '14px Arial';
+      const xLabelWidth = resultsCtx.measureText(xLabel).width;
+      const xLabelX = plot.x + (plot.w - xLabelWidth) / 2;
+      const xLabelY = plot.y + plot.h + 36;
+      resultsCtx.fillText(xLabel, xLabelX, xLabelY);
 
-      const items = [
-        { color: '#4aa3ff', label: 'Rodeado grande' },
-        { color: '#ff6b6b', label: 'Rodeado pequeno' }
-      ];
-
-      items.forEach((item, idx) => {
-        const y = legendY + 14 + rowGap * (idx + 1);
-        resultsCtx.strokeStyle = item.color;
-        resultsCtx.fillStyle = item.color;
-        resultsCtx.lineWidth = 2;
-        resultsCtx.beginPath();
-        resultsCtx.moveTo(legendX, y - 4);
-        resultsCtx.lineTo(legendX + 24, y - 4);
-        resultsCtx.stroke();
-        resultsCtx.beginPath();
-        resultsCtx.arc(legendX + 12, y - 4, 4, 0, Math.PI * 2);
-        resultsCtx.fill();
-
-        resultsCtx.fillStyle = '#111111';
-        resultsCtx.fillText(item.label, legendX + 32, y);
-      });
+      resultsCtx.save();
+      resultsCtx.translate(plot.x - 52, plot.y + plot.h / 2);
+      resultsCtx.rotate(-Math.PI / 2);
+      resultsCtx.textAlign = 'center';
+      resultsCtx.textBaseline = 'middle';
+      resultsCtx.fillText(yLabel, 0, 0);
+      resultsCtx.restore();
     }
+
+    function drawPisLine(fit, color) {
+      if (!fit) return;
+      const x = xToPix(fit.mu);
+      resultsCtx.save();
+      resultsCtx.setLineDash([8, 6]);
+      resultsCtx.strokeStyle = color;
+      resultsCtx.lineWidth = 2;
+      resultsCtx.beginPath();
+      resultsCtx.moveTo(x, plot.y);
+      resultsCtx.lineTo(x, plot.y + plot.h);
+      resultsCtx.stroke();
+      resultsCtx.restore();
+    }
+
   }
 
   function downloadCsv() {
