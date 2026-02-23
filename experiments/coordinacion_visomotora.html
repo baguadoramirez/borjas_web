@@ -27,17 +27,53 @@
 
     #feedback {
       position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.7);
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
       color: #fff;
-      padding: 12px 18px;
-      border-radius: 10px;
-      font-size: 1rem;
       display: none;
       z-index: 5;
       text-align: center;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .feedback-card {
+      width: min(720px, 94vw);
+      border: 2px solid #f2f2f2;
+      border-radius: 16px;
+      padding: 24px 20px;
+      background: rgba(15, 15, 15, 0.95);
+    }
+
+    .feedback-title {
+      margin: 0 0 12px 0;
+      font-size: clamp(1.3rem, 3vw, 2rem);
+      line-height: 1.2;
+    }
+
+    .feedback-text {
+      margin: 0 0 18px 0;
+      font-size: clamp(1rem, 2.2vw, 1.2rem);
+      line-height: 1.45;
+    }
+
+    .feedback-stats {
+      margin: 0 0 18px 0;
+      font-size: clamp(0.95rem, 2vw, 1.1rem);
+      color: #d9ecff;
+    }
+
+    .feedback-button {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #111;
+      background: #f2f2f2;
     }
   </style>
 </head>
@@ -81,8 +117,8 @@
     <section id="instructions" class="panel hidden">
       <h2>Instrucciones</h2>
       <p>Vamos a jugar a seguir un fantasma que se mueve por la pantalla.</p>
-      <p>Mueve tu mano o tu dedo para poner la cruz encima del fantasma. Cuando lo haces bien, la cruz se pone verde.</p>
-      <p>Para empezar cada parte del juego, quedate un segundo entero dentro del fantasma, sin salirte.</p>
+      <p>Para seguirlo controlarás una cruz en el centro de la pantalla.</p>
+      <p>Mueve la cruz para ponerla encima del fantasma. Sabrás que lo estás haciendo bien porque la cruz se pondrá en verde.</p>
       <p>Cuando empiece, intenta seguir al fantasma todo el rato y no lo pierdas.</p>
       <p>A veces la cruz va un poquito tarde porque el fantasma hace travesuras. No pasa nada. Tu sigue intentandolo lo mejor que puedas.</p>
       <div class="button-row">
@@ -100,10 +136,10 @@
       <h2>Resultados</h2>
       <p id="resultsSummary"></p>
       <div class="button-row">
-        <button id="downloadCsv" type="button">Descargar CSV</button>
+        <button id="downloadExcel" type="button">Descargar Excel</button>
       </div>
       <div class="graph-wrap">
-        <canvas id="resultsCanvas" width="700" height="420"></canvas>
+        <canvas id="resultsCanvas" width="700" height="520"></canvas>
       </div>
     </section>
   </div>
@@ -123,14 +159,14 @@
     const continueButton = document.getElementById('continueButton');
     const showInstructionsButton = document.getElementById('showInstructionsButton');
     const startButton = document.getElementById('startButton');
-    const downloadButton = document.getElementById('downloadCsv');
+    const downloadButton = document.getElementById('downloadExcel');
 
     const targetRadius = 90;
     const ghost = { x: 400, y: 300, angle: 0, radius: targetRadius };
     const mouse = { x: 0, y: 0 };
     const delaySchedule = [0, 0, 50, 100, 150];
     const maxDelay = Math.max(...delaySchedule);
-    const blockDuration = 60000;
+    const blockDuration = 5000;
     const blocks = delaySchedule.length;
     const pointerHistory = [];
 
@@ -425,17 +461,37 @@
     }
 
     function showBlockFeedback() {
-      feedbackDiv.innerHTML = `Bloque ${currentBlock + 1} finalizado. RMSE: ${blockErrors[currentBlock]} px.`;
-      feedbackDiv.style.display = 'block';
-      setTimeout(() => {
+      const finishedBlock = currentBlock + 1;
+      const isFirstBlock = currentBlock === 0;
+
+      const title = isFirstBlock
+        ? 'Muy bien, ya superaste el primer bloque'
+        : `Bloque ${finishedBlock} finalizado`;
+      const text = isFirstBlock
+        ? 'A partir de ahora el fantasma puede hacer travesuras y tu cruz puede ir un poquito tarde. No pasa nada: tu sigue al fantasma lo mejor que puedas.'
+        : 'Respira un momento y cuando estes listo, pulsa continuar para el siguiente bloque.';
+
+      feedbackDiv.innerHTML = `
+        <div class="feedback-card">
+          <h3 class="feedback-title">${title}</h3>
+          <p class="feedback-text">${text}</p>
+          <button id="feedbackNextTrialButton" class="feedback-button" type="button">Siguiente ensayo</button>
+        </div>
+      `;
+      feedbackDiv.style.display = 'flex';
+
+      const continueAfterFeedback = () => {
         feedbackDiv.style.display = 'none';
+        feedbackDiv.innerHTML = '';
         currentBlock++;
         if (currentBlock < blocks) {
           nextBlock();
         } else {
           showFinal();
         }
-      }, 3000);
+      };
+
+      document.getElementById('feedbackNextTrialButton').addEventListener('click', continueAfterFeedback);
     }
 
     function showFinal() {
@@ -454,9 +510,9 @@
       ctxr.fillStyle = '#ffffff';
       ctxr.fillRect(0, 0, resultsCanvas.width, resultsCanvas.height);
       ctxr.fillStyle = '#111111';
-      ctxr.font = '16px Arial';
+      ctxr.font = '12px Arial';
 
-      const labels = delaySchedule.map((delay, i) => `B${i + 1} - Retraso del fantasma: ${delay || 0} ms`);
+      const labels = delaySchedule.map(delay => `${delay || 0}`);
       const paddingLeft = 70;
       const paddingRight = 30;
       const chartWidth = resultsCanvas.width - paddingLeft - paddingRight;
@@ -465,12 +521,12 @@
       const startX = paddingLeft;
 
       const topChartTop = 40;
-      const topChartBottom = 190;
-      const bottomChartTop = 230;
-      const bottomChartBottom = 340;
+      const topChartBottom = Math.floor(resultsCanvas.height * 0.45);
+      const bottomChartTop = Math.floor(resultsCanvas.height * 0.55);
+      const bottomChartBottom = resultsCanvas.height - 80;
 
       ctxr.fillText('RMSE por bloque (px)', 20, 24);
-      ctxr.fillText('Variabilidad (SD) por bloque (px)', 20, 235);
+      ctxr.fillText('Variabilidad (SD) por bloque (px)', 20, bottomChartTop - 8);
 
       const maxRmse = Math.max(...blockErrors, 1);
       const maxVar = Math.max(...blockVariability, 1);
@@ -481,7 +537,7 @@
         ctxr.fillStyle = '#4aa3ff';
         ctxr.fillRect(x, topChartBottom - h, barWidth, h);
         ctxr.fillStyle = '#111111';
-        ctxr.fillText(`${val} px`, x + 6, topChartBottom - h - 8);
+        ctxr.fillText(`${val} px`, x + 6, topChartBottom - h - 6);
       });
 
       blockVariability.forEach((val, i) => {
@@ -490,7 +546,7 @@
         ctxr.fillStyle = '#ff8a65';
         ctxr.fillRect(x, bottomChartBottom - h, barWidth, h);
         ctxr.fillStyle = '#111111';
-        ctxr.fillText(`${val} px`, x + 6, bottomChartBottom - h - 8);
+        ctxr.fillText(`${val} px`, x + 6, bottomChartBottom - h - 6);
       });
 
       ctxr.strokeStyle = '#111111';
@@ -503,33 +559,92 @@
       ctxr.lineTo(resultsCanvas.width - paddingRight, bottomChartBottom);
       ctxr.stroke();
 
-      ctxr.save();
-      ctxr.font = '12px Arial';
-      ctxr.fillStyle = '#111111';
-      labels.forEach((label, i) => {
-        const x = startX + i * (barWidth + gap) + barWidth / 2;
+      function drawXAxis(yAxisLine, labelY) {
+        const tickLen = 6;
         ctxr.save();
-        ctxr.translate(x, bottomChartBottom + 42);
-        ctxr.rotate(-Math.PI / 6);
-        ctxr.fillText(label, 0, 0);
+        ctxr.font = '10px Arial';
+        ctxr.fillStyle = '#111111';
+        ctxr.textAlign = 'center';
+        ctxr.textBaseline = 'top';
+        labels.forEach((label, i) => {
+          const x = startX + i * (barWidth + gap) + barWidth / 2;
+          ctxr.beginPath();
+          ctxr.moveTo(x, yAxisLine);
+          ctxr.lineTo(x, yAxisLine + tickLen);
+          ctxr.stroke();
+          ctxr.fillText(label, x, labelY);
+        });
         ctxr.restore();
-      });
+      }
+
+      drawXAxis(topChartBottom, topChartBottom + 10);
+      drawXAxis(bottomChartBottom, bottomChartBottom + 10);
+
+      ctxr.save();
+      ctxr.font = '11px Arial';
+      ctxr.fillStyle = '#111111';
+      ctxr.fillText('Retraso (ms)', paddingLeft, bottomChartBottom + 38);
       ctxr.restore();
     }
 
-    function downloadCSV() {
-      const header = 'participant_id,age,sex,block,delay_ms,rmse,sd_error\n';
-      const body = blockErrors.map((err, i) => (
-        `${participant.id},${participant.age},${participant.sex},${i + 1},${delaySchedule[i] || 0},${err},${blockVariability[i]}`
-      )).join('\n');
-      const blob = new Blob([header + body], { type: 'text/csv' });
+    function escapeXml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    }
+
+    function formatTimestamp(date) {
+      const pad = value => String(value).padStart(2, '0');
+      return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+    }
+
+    function downloadExcel() {
+      const rows = blockErrors.map((err, i) => `
+        <Row>
+          <Cell><Data ss:Type="String">${escapeXml(participant.id)}</Data></Cell>
+          <Cell><Data ss:Type="Number">${participant.age}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(participant.sex)}</Data></Cell>
+          <Cell><Data ss:Type="Number">${i + 1}</Data></Cell>
+          <Cell><Data ss:Type="Number">${delaySchedule[i] || 0}</Data></Cell>
+          <Cell><Data ss:Type="Number">${err}</Data></Cell>
+          <Cell><Data ss:Type="Number">${blockVariability[i]}</Data></Cell>
+        </Row>
+      `).join('');
+
+      const workbookXml = `<?xml version="1.0"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Worksheet ss:Name="Resultados">
+    <Table>
+      <Row>
+        <Cell><Data ss:Type="String">participant_id</Data></Cell>
+        <Cell><Data ss:Type="String">age</Data></Cell>
+        <Cell><Data ss:Type="String">sex</Data></Cell>
+        <Cell><Data ss:Type="String">block</Data></Cell>
+        <Cell><Data ss:Type="String">delay_ms</Data></Cell>
+        <Cell><Data ss:Type="String">rmse</Data></Cell>
+        <Cell><Data ss:Type="String">sd_error</Data></Cell>
+      </Row>
+      ${rows}
+    </Table>
+  </Worksheet>
+</Workbook>`;
+
+      const blob = new Blob([workbookXml], { type: 'application/vnd.ms-excel' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = 'coordinacion_visomotora_results.csv';
+      const safeId = participant.id ? participant.id.replace(/[^a-zA-Z0-9_-]/g, '') : 'sin_id';
+      const timestamp = formatTimestamp(new Date());
+      link.download = `${safeId}_coordinacion_visomotora_results_${timestamp}.xls`;
       link.click();
     }
 
-    downloadButton.addEventListener('click', downloadCSV);
+    downloadButton.addEventListener('click', downloadExcel);
 
     function resizeCanvas() {
       canvas.width = window.innerWidth;
