@@ -502,7 +502,7 @@
       resultsPanel.classList.remove('hidden');
       resultsSummary.innerHTML = blockErrors
         .slice(1)
-        .map((e, i) => `Bloque ${i + 1} (${delaySchedule[i + 1] || 0} ms): RMSE ${e} px, variabilidad ${blockVariability[i + 1]} px`)
+        .map((e, i) => `Bloque ${i + 1} (${delaySchedule[i + 1] || 0} ms): error medio en pixels ${e}`)
         .join('<br>');
       drawResultsChart();
     }
@@ -524,17 +524,12 @@
       const startX = paddingLeft;
 
       const topChartTop = 40;
-      const topChartBottom = Math.floor(resultsCanvas.height * 0.45);
-      const bottomChartTop = Math.floor(resultsCanvas.height * 0.55);
-      const bottomChartBottom = resultsCanvas.height - 80;
+      const topChartBottom = resultsCanvas.height - 80;
 
-      ctxr.fillText('RMSE por bloque (px)', 20, 24);
-      ctxr.fillText('Variabilidad (SD) por bloque (px)', 20, bottomChartTop - 8);
+      ctxr.fillText('Error medio (px)', 20, 24);
 
       const displayErrors = blockErrors.slice(1);
-      const displayVariability = blockVariability.slice(1);
       const maxRmse = Math.max(...displayErrors, 1);
-      const maxVar = Math.max(...displayVariability, 1);
 
       displayErrors.forEach((val, i) => {
         const x = startX + i * (barWidth + gap);
@@ -545,23 +540,11 @@
         ctxr.fillText(`${val} px`, x + 6, topChartBottom - h - 6);
       });
 
-      displayVariability.forEach((val, i) => {
-        const x = startX + i * (barWidth + gap);
-        const h = (val / maxVar) * (bottomChartBottom - bottomChartTop);
-        ctxr.fillStyle = '#ff8a65';
-        ctxr.fillRect(x, bottomChartBottom - h, barWidth, h);
-        ctxr.fillStyle = '#111111';
-        ctxr.fillText(`${val} px`, x + 6, bottomChartBottom - h - 6);
-      });
-
       ctxr.strokeStyle = '#111111';
       ctxr.beginPath();
       ctxr.moveTo(paddingLeft, topChartTop);
       ctxr.lineTo(paddingLeft, topChartBottom);
       ctxr.lineTo(resultsCanvas.width - paddingRight, topChartBottom);
-      ctxr.moveTo(paddingLeft, bottomChartTop);
-      ctxr.lineTo(paddingLeft, bottomChartBottom);
-      ctxr.lineTo(resultsCanvas.width - paddingRight, bottomChartBottom);
       ctxr.stroke();
 
       function drawXAxis(yAxisLine, labelY) {
@@ -583,12 +566,11 @@
       }
 
       drawXAxis(topChartBottom, topChartBottom + 10);
-      drawXAxis(bottomChartBottom, bottomChartBottom + 10);
 
       ctxr.save();
       ctxr.font = '11px Arial';
       ctxr.fillStyle = '#111111';
-      ctxr.fillText('Retraso (ms)', paddingLeft, bottomChartBottom + 38);
+      ctxr.fillText('Retraso (ms)', paddingLeft, topChartBottom + 38);
       ctxr.restore();
     }
 
@@ -632,8 +614,8 @@
         <Cell><Data ss:Type="String">sex</Data></Cell>
         <Cell><Data ss:Type="String">block</Data></Cell>
         <Cell><Data ss:Type="String">delay_ms</Data></Cell>
-        <Cell><Data ss:Type="String">rmse</Data></Cell>
-        <Cell><Data ss:Type="String">sd_error</Data></Cell>
+        <Cell><Data ss:Type="String">error_medio_px</Data></Cell>
+        <Cell><Data ss:Type="String">variabilidad_px</Data></Cell>
       </Row>
       ${rows}
     </Table>
