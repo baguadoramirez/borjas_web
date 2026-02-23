@@ -166,7 +166,8 @@
     const mouse = { x: 0, y: 0 };
     const delaySchedule = [0, 0, 50, 100, 150];
     const maxDelay = Math.max(...delaySchedule);
-    const blockDuration = 5000;
+    const practiceBlockDuration = 30000;
+    const mainBlockDuration = 60000;
     const blocks = delaySchedule.length;
     const pointerHistory = [];
 
@@ -446,6 +447,7 @@
       drawCursor(delayedPointer.x, delayedPointer.y, inTolerance);
 
       const elapsed = simTime - blockStart;
+      const blockDuration = currentBlock === 0 ? practiceBlockDuration : mainBlockDuration;
 
       if (elapsed < blockDuration) {
         requestAnimationFrame(update);
@@ -461,12 +463,12 @@
     }
 
     function showBlockFeedback() {
-      const finishedBlock = currentBlock + 1;
       const isFirstBlock = currentBlock === 0;
+      const displayBlockNumber = currentBlock;
 
       const title = isFirstBlock
         ? 'Muy bien, ya superaste el primer bloque'
-        : `Bloque ${finishedBlock} finalizado`;
+        : `Bloque ${displayBlockNumber} finalizado`;
       const text = isFirstBlock
         ? 'A partir de ahora el fantasma puede hacer travesuras y tu cruz puede ir un poquito tarde. No pasa nada: tu sigue al fantasma lo mejor que puedas.'
         : 'Respira un momento y cuando estes listo, pulsa continuar para el siguiente bloque.';
@@ -499,7 +501,8 @@
       trialCounter.style.display = 'none';
       resultsPanel.classList.remove('hidden');
       resultsSummary.innerHTML = blockErrors
-        .map((e, i) => `Bloque ${i + 1} (${delaySchedule[i] || 0} ms): RMSE ${e} px, variabilidad ${blockVariability[i]} px`)
+        .slice(1)
+        .map((e, i) => `Bloque ${i + 1} (${delaySchedule[i + 1] || 0} ms): RMSE ${e} px, variabilidad ${blockVariability[i + 1]} px`)
         .join('<br>');
       drawResultsChart();
     }
@@ -512,7 +515,7 @@
       ctxr.fillStyle = '#111111';
       ctxr.font = '12px Arial';
 
-      const labels = delaySchedule.map(delay => `${delay || 0}`);
+      const labels = delaySchedule.slice(1).map(delay => `${delay || 0}`);
       const paddingLeft = 70;
       const paddingRight = 30;
       const chartWidth = resultsCanvas.width - paddingLeft - paddingRight;
@@ -528,10 +531,12 @@
       ctxr.fillText('RMSE por bloque (px)', 20, 24);
       ctxr.fillText('Variabilidad (SD) por bloque (px)', 20, bottomChartTop - 8);
 
-      const maxRmse = Math.max(...blockErrors, 1);
-      const maxVar = Math.max(...blockVariability, 1);
+      const displayErrors = blockErrors.slice(1);
+      const displayVariability = blockVariability.slice(1);
+      const maxRmse = Math.max(...displayErrors, 1);
+      const maxVar = Math.max(...displayVariability, 1);
 
-      blockErrors.forEach((val, i) => {
+      displayErrors.forEach((val, i) => {
         const x = startX + i * (barWidth + gap);
         const h = (val / maxRmse) * (topChartBottom - topChartTop);
         ctxr.fillStyle = '#4aa3ff';
@@ -540,7 +545,7 @@
         ctxr.fillText(`${val} px`, x + 6, topChartBottom - h - 6);
       });
 
-      blockVariability.forEach((val, i) => {
+      displayVariability.forEach((val, i) => {
         const x = startX + i * (barWidth + gap);
         const h = (val / maxVar) * (bottomChartBottom - bottomChartTop);
         ctxr.fillStyle = '#ff8a65';
@@ -602,15 +607,15 @@
     }
 
     function downloadExcel() {
-      const rows = blockErrors.map((err, i) => `
+      const rows = blockErrors.slice(1).map((err, i) => `
         <Row>
           <Cell><Data ss:Type="String">${escapeXml(participant.id)}</Data></Cell>
           <Cell><Data ss:Type="Number">${participant.age}</Data></Cell>
           <Cell><Data ss:Type="String">${escapeXml(participant.sex)}</Data></Cell>
           <Cell><Data ss:Type="Number">${i + 1}</Data></Cell>
-          <Cell><Data ss:Type="Number">${delaySchedule[i] || 0}</Data></Cell>
+          <Cell><Data ss:Type="Number">${delaySchedule[i + 1] || 0}</Data></Cell>
           <Cell><Data ss:Type="Number">${err}</Data></Cell>
-          <Cell><Data ss:Type="Number">${blockVariability[i]}</Data></Cell>
+          <Cell><Data ss:Type="Number">${blockVariability[i + 1]}</Data></Cell>
         </Row>
       `).join('');
 
