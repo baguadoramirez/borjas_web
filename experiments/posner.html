@@ -96,9 +96,10 @@
     <section id="instructions" class="panel hidden">
       <h2>Instrucciones</h2>
       <ol>
-        <li>Fija la mirada en la cruz central (+) durante todo el ensayo.</li>
-        <li>Una flecha puede indicar el lado donde podria aparecer el punto.</li>
-        <li>Cuando aparezca el punto, responde lo mas rapido posible.</li>
+        <li>Fija la mirada en el centro de la pantalla durante todo el experimeto.</li>
+        <li>Durante un corto período aparecera una cruz central (+) en la pantalla.</li>
+        <li>Después una flecha indicará el lado donde podria aparecer el target (punto rojo).</li>
+        <li>Cuando aparezca el target, responde lo mas rapido posible indicando en qué lado de la pantalla se encuentra.</li>
         <li>Usa flechas del teclado o toca el area roja correspondiente.</li>
       </ol>
       <p class="helper-text">Asegurate de estar en pantalla completa para mayor precision.</p>
@@ -302,9 +303,8 @@
       const arr = data.filter(d => d.condition === cond);
       const corr = arr.filter(d => d.correct === 1);
       const avgRt = corr.length ? (corr.reduce((s, d) => s + d.rt, 0) / corr.length).toFixed(1) : 'N/A';
-      const pct = arr.length ? ((corr.length / arr.length) * 100).toFixed(1) : 'N/A';
-      summaryLines.push(`<p><strong>${cond}</strong>: RT ${avgRt} ms — ${pct}% aciertos</p>`);
-      return { cond, avgRt: Number(avgRt), pct: Number(pct) };
+      summaryLines.push(`<p><strong>${cond}</strong>: RT ${avgRt} ms</p>`);
+      return { cond, avgRt: Number(avgRt) };
     });
 
     resultsSummary.innerHTML = summaryLines.join('');
@@ -316,7 +316,7 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const maxRt = Math.max(...stats.map(s => s.avgRt || 0), 1);
-    const chartTop = 40;
+    const chartTop = 60;
     const chartBottom = 320;
     const chartHeight = chartBottom - chartTop;
     const barWidth = 120;
@@ -326,10 +326,6 @@
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = '#111111';
-    ctx.font = '16px Arial';
-    ctx.fillText('Tiempo medio de respuesta (ms)', 20, 24);
-
     stats.forEach((s, i) => {
       const x = startX + i * (barWidth + gap);
       const barHeight = (s.avgRt / maxRt) * chartHeight;
@@ -338,15 +334,44 @@
       ctx.fillStyle = '#111111';
       ctx.fillText(s.cond, x + 10, chartBottom + 24);
       ctx.fillText(`${s.avgRt || 0} ms`, x + 10, chartBottom - barHeight - 10);
-      ctx.fillText(`${isNaN(s.pct) ? '0' : s.pct}% aciertos`, x + 10, chartBottom + 46);
     });
+
+    const axisX = 70;
+    const axisY = chartBottom;
+    const axisRight = canvas.width - 40;
 
     ctx.strokeStyle = '#111111';
     ctx.beginPath();
-    ctx.moveTo(60, chartTop);
-    ctx.lineTo(60, chartBottom);
-    ctx.lineTo(canvas.width - 40, chartBottom);
+    ctx.moveTo(axisX, chartTop);
+    ctx.lineTo(axisX, axisY);
+    ctx.lineTo(axisRight, axisY);
     ctx.stroke();
+
+    const tickCount = 5;
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#111111';
+    for (let i = 0; i <= tickCount; i++) {
+      const y = axisY - (i / tickCount) * chartHeight;
+      const value = Math.round((i / tickCount) * maxRt);
+      ctx.beginPath();
+      ctx.moveTo(axisX - 6, y);
+      ctx.lineTo(axisX, y);
+      ctx.stroke();
+      ctx.fillText(`${value}`, axisX - 38, y + 4);
+    }
+
+    ctx.font = '16px Arial';
+    const xTitle = 'Tipo de señal';
+    const xTitleWidth = ctx.measureText(xTitle).width;
+    ctx.fillText(xTitle, (canvas.width - xTitleWidth) / 2, canvas.height - 20);
+
+    const yTitle = 'Tiempo de respuesta (ms)';
+    ctx.save();
+    ctx.translate(24, (chartTop + chartBottom) / 2);
+    ctx.rotate(-Math.PI / 2);
+    const yTitleWidth = ctx.measureText(yTitle).width;
+    ctx.fillText(yTitle, -yTitleWidth / 2, 0);
+    ctx.restore();
   }
 
   function downloadCSV() {
