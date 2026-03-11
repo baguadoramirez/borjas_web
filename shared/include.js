@@ -72,6 +72,7 @@
     '          <a href="{{ROOT}}experiments/coordinacion_visomotora.html">Coordinacion visomotora</a>' +
     '          <a href="{{ROOT}}experiments/random_dot_motion.html">Coherencia de movimiento (RDM)</a>' +
     '          <a href="{{ROOT}}experiments/ebbinghaus_pest.html">Ilusion de Ebbinghaus (PEST)</a>' +
+    '          <a href="{{ROOT}}experiments/busqueda_selectiva.html">Busqueda selectiva (paralela vs serie)</a>' +
     '        </div>' +
     '      </div>' +
     '      <button class="theme-toggle" type="button" id="theme-toggle" aria-pressed="false">Dark mode</button>' +

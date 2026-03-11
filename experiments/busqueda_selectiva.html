@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Busqueda selectiva - Paralela vs Serie</title>
+  <link rel="stylesheet" href="experiment.css">
+  <style>
+    #experimentStage { background: #000; }
+
+    #fixation {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 90px;
+      color: #ffffff;
+      display: none;
+    }
+
+    #stimulusArea {
+      position: absolute;
+      inset: 0;
+    }
+
+    .stimulus {
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      cursor: pointer;
+      transition: transform 0.08s ease-out;
+    }
+
+    .stimulus:hover {
+      transform: scale(1.08);
+    }
+
+    .circle {
+      border-radius: 50%;
+    }
+
+    .square {
+      border-radius: 6px;
+    }
+
+    #feedback {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ffffff;
+      font-size: 20px;
+      min-height: 24px;
+    }
+
+    .instruction-target {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #ff3b3b;
+      vertical-align: middle;
+      margin: 0 6px 2px 0;
+    }
+
+    .instruction-sample {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      justify-content: center;
+      margin: 16px 0 6px;
+    }
+
+    .instruction-item {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: #3bd26f;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.08s ease-out, border-color 0.08s ease-out;
+    }
+
+    .instruction-item.circle {
+      border-radius: 50%;
+    }
+
+    .instruction-item.red {
+      background: #ff3b3b;
+    }
+
+    .instruction-item.selected {
+      border-color: #ffffff;
+      transform: scale(1.08);
+    }
+
+    .instruction-note {
+      text-align: center;
+      color: var(--exp-muted);
+      font-size: 1rem;
+      margin-top: 6px;
+    }
+
+    #startButton {
+      background: #3d3d3d;
+    }
+
+    #startButton.ready {
+      background: #c92a2a;
+    }
+  </style>
+</head>
+<body class="experiment-page">
+  <div class="experiment-shell">
+    <section id="setup" class="panel">
+      <h1>Busqueda selectiva</h1>
+      <p>Identifica el circulo rojo lo mas rapido posible. Haz clic sobre el target para responder.</p>
+
+      <h2>Informacion del participante</h2>
+      <div class="form-grid">
+        <label>ID participante
+          <input id="participantId" type="text" autocomplete="off">
+        </label>
+        <label>Edad
+          <input id="participantAge" type="number" min="0" inputmode="numeric">
+        </label>
+        <label>Sexo
+          <select id="participantSex">
+            <option value="">Selecciona</option>
+            <option>Femenino</option>
+            <option>Masculino</option>
+            <option>Otro</option>
+            <option>Prefiero no decirlo</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="continueButton" type="button">Continuar</button>
+      </div>
+    </section>
+
+    <section id="preInstructions" class="panel intermediate-panel hidden">
+      <p class="intermediate-message">A continuacion apareceran las instrucciones. Leelas con atencion antes de empezar.</p>
+      <div class="button-row">
+        <button id="showInstructionsButton" type="button">Ver instrucciones</button>
+      </div>
+    </section>
+
+    <section id="instructions" class="panel hidden">
+      <h2>Instrucciones</h2>
+      <ol>
+        <li>En cada ensayo apareceran varios estímulos en pantalla.</li>
+        <li>El target siempre es un círculo rojo.</li>
+        <li>Haz clic sobre el target tan rápido y preciso como puedas.</li>
+        <li>En algunas pruebas verás solo círculos verdes como distractores.</li>
+        <li>En otras habrá círculos verdes, cuadrados verdes y cuadrados rojos como distractores.</li>
+        <li>Si te equivocas, continúa con el siguiente ensayo.</li>
+      </ol>
+      <p class="helper-text">Target: <span class="instruction-target" aria-hidden="true"></span> círculo rojo.</p>
+      <div class="instruction-sample" id="instructionSample" aria-label="Ejemplo de estímulos"></div>
+      <p class="instruction-note" id="instructionNote">Haz clic en el círculo rojo para habilitar el inicio.</p>
+      <p class="helper-text">Si puedes, ponte en pantalla completa para mejorar la precisión.</p>
+      <div class="button-row">
+        <button id="startButton" type="button" disabled>Comenzar experimento</button>
+      </div>
+    </section>
+
+    <section id="experimentStage" class="experiment-stage">
+      <div id="trialCounter">0/0</div>
+      <div id="fixation">+</div>
+      <div id="stimulusArea"></div>
+      <div id="feedback"></div>
+    </section>
+
+    <section id="results" class="results-panel hidden">
+      <h2>Resultados</h2>
+      <div id="resultsSummary"></div>
+      <div class="button-row">
+        <button id="downloadCsv" type="button">Descargar CSV con mediana</button>
+      </div>
+      <div class="graph-wrap">
+        <canvas id="resultsCanvas" width="700" height="420"></canvas>
+      </div>
+    </section>
+  </div>
+
+<script>
+  const setupPanel = document.getElementById('setup');
+  const preInstructionsPanel = document.getElementById('preInstructions');
+  const instructionsPanel = document.getElementById('instructions');
+  const experimentStage = document.getElementById('experimentStage');
+  const resultsPanel = document.getElementById('results');
+  const resultsSummary = document.getElementById('resultsSummary');
+  const trialCounter = document.getElementById('trialCounter');
+  const fixationEl = document.getElementById('fixation');
+  const stimulusArea = document.getElementById('stimulusArea');
+  const feedbackEl = document.getElementById('feedback');
+  const startButton = document.getElementById('startButton');
+  const continueButton = document.getElementById('continueButton');
+  const showInstructionsButton = document.getElementById('showInstructionsButton');
+  const downloadButton = document.getElementById('downloadCsv');
+  const canvas = document.getElementById('resultsCanvas');
+  const instructionSample = document.getElementById('instructionSample');
+  const instructionNote = document.getElementById('instructionNote');
+
+  const repetitions = 2;
+  const fixationTime = 500;
+  const feedbackTime = 350;
+
+  const conditions = [
+    { searchType: 'solo_circulos', distractors: 20, label: 'Solo circulos - Baja densidad', key: 'solo_circulos_baja' },
+    { searchType: 'solo_circulos', distractors: 100, label: 'Solo circulos - Alta densidad', key: 'solo_circulos_alta' },
+    { searchType: 'cuadrados_circulos', distractors: 20, label: 'Cuadrados y circulos - Baja densidad', key: 'cuadrados_circulos_baja' },
+    { searchType: 'cuadrados_circulos', distractors: 100, label: 'Cuadrados y circulos - Alta densidad', key: 'cuadrados_circulos_alta' }
+  ];
+
+  let participant = { id: '', age: 0, sex: '' };
+  let trials = [];
+  let trialIndex = -1;
+  let data = [];
+  let trialActive = false;
+  let startTime = 0;
+
+  function validateParticipant() {
+    const id = document.getElementById('participantId').value.trim();
+    const age = document.getElementById('participantAge').value;
+    const sex = document.getElementById('participantSex').value;
+    if (!id || !age || !sex) {
+      alert('Completa ID, edad y sexo para continuar.');
+      return null;
+    }
+    return { id, age: Number(age), sex };
+  }
+
+  function buildTrials() {
+    trials = [];
+    conditions.forEach(condition => {
+      for (let i = 0; i < repetitions; i++) {
+        trials.push({ ...condition });
+      }
+    });
+    trials.sort(() => Math.random() - 0.5);
+  }
+
+  function showPanel(panel) {
+    [setupPanel, preInstructionsPanel, instructionsPanel, resultsPanel].forEach(p => p.classList.add('hidden'));
+    panel.classList.remove('hidden');
+  }
+
+  function startExperiment() {
+    if (!participant.id) {
+      const info = validateParticipant();
+      if (!info) return;
+      participant = info;
+    }
+    buildTrials();
+    data = [];
+    trialIndex = -1;
+    experimentStage.classList.add('active');
+    setupPanel.classList.add('hidden');
+    preInstructionsPanel.classList.add('hidden');
+    instructionsPanel.classList.add('hidden');
+    resultsPanel.classList.add('hidden');
+    trialCounter.style.display = 'block';
+    nextTrial();
+  }
+
+  function nextTrial() {
+    trialIndex += 1;
+    if (trialIndex >= trials.length) {
+      showResults();
+      return;
+    }
+    trialCounter.textContent = `${trialIndex + 1}/${trials.length}`;
+    clearStimuli();
+    feedbackEl.textContent = '';
+    fixationEl.style.display = 'block';
+    trialActive = false;
+    setTimeout(() => {
+      fixationEl.style.display = 'none';
+      presentStimuli(trials[trialIndex]);
+    }, fixationTime);
+  }
+
+  function clearStimuli() {
+    stimulusArea.innerHTML = '';
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function layoutPositions(count) {
+    const rect = stimulusArea.getBoundingClientRect();
+    const minDim = Math.min(rect.width, rect.height);
+    const margin = Math.max(32, minDim * 0.06);
+    const size = Math.max(14, Math.min(38, minDim * 0.045));
+    const minDist = size * 1.15;
+    const maxAttempts = 5000;
+
+    const positions = [];
+    let attempts = 0;
+    while (positions.length < count && attempts < maxAttempts) {
+      attempts += 1;
+      const x = margin + Math.random() * (rect.width - margin * 2);
+      const y = margin + Math.random() * (rect.height - margin * 2);
+      let ok = true;
+      for (let i = 0; i < positions.length; i++) {
+        const dx = positions[i].x - x;
+        const dy = positions[i].y - y;
+        if (Math.hypot(dx, dy) < minDist) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) {
+        positions.push({ x, y, size });
+      }
+    }
+
+    if (positions.length < count) {
+      const cols = Math.ceil(Math.sqrt(count));
+      const rows = Math.ceil(count / cols);
+      const cellW = (rect.width - margin * 2) / cols;
+      const cellH = (rect.height - margin * 2) / rows;
+      for (let r = 0; r < rows && positions.length < count; r++) {
+        for (let c = 0; c < cols && positions.length < count; c++) {
+          positions.push({
+            x: margin + c * cellW + cellW / 2,
+            y: margin + r * cellH + cellH / 2,
+            size
+          });
+        }
+      }
+      shuffle(positions);
+      return positions.slice(0, count);
+    }
+
+    return positions;
+  }
+
+  function buildDistractors(trial) {
+    const distractors = [];
+    if (trial.searchType === 'solo_circulos') {
+      for (let i = 0; i < trial.distractors; i++) {
+        distractors.push({ shape: 'circle', color: 'green', label: 'circulo_verde' });
+      }
+    } else {
+      const options = [
+        { shape: 'circle', color: 'green', label: 'circulo_verde' },
+        { shape: 'square', color: 'green', label: 'cuadrado_verde' },
+        { shape: 'square', color: 'red', label: 'cuadrado_rojo' }
+      ];
+      for (let i = 0; i < trial.distractors; i++) {
+        distractors.push(options[Math.floor(Math.random() * options.length)]);
+      }
+    }
+    return distractors;
+  }
+
+  function presentStimuli(trial) {
+    clearStimuli();
+    const target = { shape: 'circle', color: 'red', isTarget: true, label: 'circulo_rojo' };
+    const distractors = buildDistractors(trial).map(d => ({ ...d, isTarget: false }));
+    const items = shuffle([target, ...distractors]);
+    const positions = layoutPositions(items.length);
+
+    items.forEach((item, index) => {
+      const el = document.createElement('div');
+      el.classList.add('stimulus', item.shape === 'circle' ? 'circle' : 'square');
+      el.style.background = item.color === 'red' ? '#ff3b3b' : '#3bd26f';
+      el.style.left = `${positions[index].x - positions[index].size / 2}px`;
+      el.style.top = `${positions[index].y - positions[index].size / 2}px`;
+      el.style.width = `${positions[index].size}px`;
+      el.style.height = `${positions[index].size}px`;
+      el.dataset.isTarget = item.isTarget ? '1' : '0';
+      el.dataset.label = item.label;
+      el.addEventListener('click', () => handleResponse(item, trial));
+      stimulusArea.appendChild(el);
+    });
+
+    trialActive = true;
+    startTime = performance.now();
+  }
+
+  function handleResponse(item, trial) {
+    if (!trialActive) return;
+    trialActive = false;
+    const rt = Math.round(performance.now() - startTime);
+    const correct = item.isTarget ? 1 : 0;
+    feedbackEl.textContent = correct ? '' : 'Incorrecto';
+
+    data.push({
+      participant_id: participant.id,
+      age: participant.age,
+      sex: participant.sex,
+      trial: trialIndex + 1,
+      search_type: trial.searchType,
+      set_size: trial.distractors + 1,
+      distractor_count: trial.distractors,
+      condition: trial.label,
+      clicked: item.label,
+      rt: rt,
+      correct: correct
+    });
+
+    setTimeout(nextTrial, feedbackTime);
+  }
+
+  function median(values) {
+    if (!values.length) return NaN;
+    const sorted = [...values].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    if (sorted.length % 2 === 0) {
+      return (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+    return sorted[mid];
+  }
+
+  function showResults() {
+    experimentStage.classList.remove('active');
+    trialCounter.style.display = 'none';
+    resultsPanel.classList.remove('hidden');
+
+    const summaryLines = [];
+    const summaries = conditions.map(cond => {
+      const subset = data.filter(d => d.condition === cond.label);
+      const correctSubset = subset.filter(d => d.correct === 1);
+      const rts = correctSubset.map(d => d.rt);
+      const med = median(rts);
+      const acc = subset.length ? ((correctSubset.length / subset.length) * 100) : 0;
+      summaryLines.push(`<p><strong>${cond.label}</strong>: Mediana RT ${isNaN(med) ? 'N/A' : med.toFixed(1)} ms — ${acc.toFixed(1)}% aciertos</p>`);
+      return { ...cond, median: med, accuracy: acc };
+    });
+
+    const allCorrect = data.filter(d => d.correct === 1).map(d => d.rt);
+    const overallMedian = median(allCorrect);
+    summaryLines.unshift(`<p><strong>Mediana global</strong>: ${isNaN(overallMedian) ? 'N/A' : overallMedian.toFixed(1)} ms</p>`);
+
+    resultsSummary.innerHTML = summaryLines.join('');
+    drawResultsChart(summaries);
+  }
+
+  function drawResultsChart(stats) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const maxRt = Math.max(...stats.map(s => isNaN(s.median) ? 0 : s.median), 1);
+    const chartTop = 40;
+    const chartBottom = 320;
+    const chartHeight = chartBottom - chartTop;
+    const barWidth = 110;
+    const gap = 40;
+    const startX = 50;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#111111';
+    ctx.font = '13px Arial';
+    ctx.fillText('Mediana de RT (ms)', 20, 24);
+
+    stats.forEach((s, i) => {
+      const x = startX + i * (barWidth + gap);
+      const barHeight = (isNaN(s.median) ? 0 : s.median / maxRt) * chartHeight;
+      ctx.fillStyle = '#4aa3ff';
+      ctx.fillRect(x, chartBottom - barHeight, barWidth, barHeight);
+      ctx.fillStyle = '#111111';
+      const labelParts = s.label.split(' - ');
+      ctx.fillText(labelParts[0], x - 6, chartBottom + 22);
+      if (labelParts[1]) {
+        ctx.fillText(labelParts[1], x - 6, chartBottom + 38);
+      }
+      ctx.fillText(`${isNaN(s.median) ? 'N/A' : s.median.toFixed(1)} ms`, x - 6, chartBottom - barHeight - 10);
+    });
+
+    ctx.strokeStyle = '#111111';
+    ctx.beginPath();
+    ctx.moveTo(40, chartTop);
+    ctx.lineTo(40, chartBottom);
+    ctx.lineTo(canvas.width - 40, chartBottom);
+    ctx.stroke();
+  }
+
+  function downloadCSV() {
+    const header = 'participant_id,age,sex,trial,search_type,set_size,distractor_count,condition,clicked,rt,correct\n';
+    const body = data.map(r =>
+      `${r.participant_id},${r.age},${r.sex},${r.trial},${r.search_type},${r.set_size},${r.distractor_count},${r.condition},${r.clicked},${r.rt},${r.correct}`
+    ).join('\n');
+
+    const summaries = conditions.map(cond => {
+      const subset = data.filter(d => d.condition === cond.label && d.correct === 1).map(d => d.rt);
+      return { key: cond.key, median: median(subset) };
+    });
+    const overallMedian = median(data.filter(d => d.correct === 1).map(d => d.rt));
+
+    const summaryLines = [
+      '',
+      'summary',
+      `median_overall_ms,${isNaN(overallMedian) ? 'N/A' : overallMedian.toFixed(1)}`,
+      ...summaries.map(s => `median_${s.key}_ms,${isNaN(s.median) ? 'N/A' : s.median.toFixed(1)}`)
+    ];
+
+    const blob = new Blob([header + body + summaryLines.join('\n')], { type: 'text/csv' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'busqueda_selectiva_resultados.csv';
+    link.click();
+  }
+
+  continueButton.addEventListener('click', () => {
+    const info = validateParticipant();
+    if (!info) return;
+    participant = info;
+    showPanel(preInstructionsPanel);
+  });
+
+  function renderInstructionSample() {
+    if (!instructionSample) return;
+    instructionSample.innerHTML = '';
+    const samples = [
+      { shape: 'circle', color: 'green', isTarget: false },
+      { shape: 'square', color: 'green', isTarget: false },
+      { shape: 'square', color: 'red', isTarget: false },
+      { shape: 'circle', color: 'red', isTarget: true }
+    ];
+    samples.forEach(item => {
+      const el = document.createElement('div');
+      el.classList.add('instruction-item', item.shape, item.color);
+      if (item.isTarget) {
+        el.dataset.target = '1';
+      }
+      el.addEventListener('click', () => {
+        if (el.dataset.target === '1') {
+          el.classList.add('selected');
+          startButton.disabled = false;
+          startButton.classList.add('ready');
+          instructionNote.textContent = 'Correcto. Ya puedes comenzar el experimento.';
+        } else {
+          instructionNote.textContent = 'Ese no es el target. Busca el círculo rojo.';
+        }
+      });
+      instructionSample.appendChild(el);
+    });
+  }
+
+  showInstructionsButton.addEventListener('click', () => {
+    showPanel(instructionsPanel);
+    startButton.disabled = true;
+    startButton.classList.remove('ready');
+    instructionNote.textContent = 'Haz clic en el círculo rojo para habilitar el inicio.';
+    renderInstructionSample();
+  });
+  startButton.addEventListener('click', startExperiment);
+  downloadButton.addEventListener('click', downloadCSV);
+</script>
+</body>
+</html>
