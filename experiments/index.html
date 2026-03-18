@@ -173,7 +173,7 @@
     <div id="introScreen" class="screen active">
     <div class="panel">
       <h1>Experimento de seguimiento</h1>
-      <p>Versión 0.2v</p>
+      <p>Versión 0.3v</p>
       <p>Introduce tu identificador y pulsa comenzar.</p>
       <input id="participantInput" type="text" placeholder="ID del participante" />
       <label id="blockLabelIntro">
@@ -576,7 +576,7 @@
 
     function buildNoiseFrames() {
       const fullSize = Math.max(1, Math.ceil(Math.max(width, height) * 1.2));
-      const frameSize = Math.max(1, Math.ceil(fullSize / 2));
+      const frameSize = fullSize;
       if (fullSize === noiseSize && frameSize === noiseFrameSize && noiseFrames.length === NOISE_FRAME_COUNT) return;
       noiseSize = fullSize;
       noiseFrameSize = frameSize;
@@ -610,7 +610,7 @@
       ctx.save();
       ctx.translate(width / 2, height / 2);
       ctx.rotate(rot);
-      ctx.drawImage(frame, -noiseSize / 2, -noiseSize / 2, noiseSize, noiseSize);
+      ctx.drawImage(frame, -noiseSize / 2, -noiseSize / 2);
       ctx.restore();
     }
 
