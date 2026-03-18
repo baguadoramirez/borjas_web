@@ -408,10 +408,6 @@
     let noiseFrames = [];
     let noiseSize = 0;
     let noiseIndex = 0;
-    let noiseOffsetX = 0;
-    let noiseOffsetY = 0;
-    let noiseVelX = 0.6;
-    let noiseVelY = 0.4;
 
     function setScreen(active) {
       [introScreen, instructionsScreen, confirmScreen, postTrainingScreen, taskScreen, surveyScreen, endScreen].forEach(s => s.classList.remove("active"));
@@ -559,8 +555,6 @@
       noiseSize = size;
       noiseFrames = [];
       noiseIndex = 0;
-      noiseOffsetX = 0;
-      noiseOffsetY = 0;
       for (let f = 0; f < NOISE_FRAME_COUNT; f++) {
         const c = document.createElement("canvas");
         c.width = size;
@@ -585,15 +579,11 @@
       if (!noiseFrames.length) buildNoiseFrames();
       const frame = noiseFrames[noiseIndex % noiseFrames.length];
       const rot = (noiseIndex % 4) * (Math.PI / 2);
-      noiseOffsetX += noiseVelX;
-      noiseOffsetY += noiseVelY;
-      if (noiseOffsetX > noiseSize) noiseOffsetX -= noiseSize;
-      if (noiseOffsetY > noiseSize) noiseOffsetY -= noiseSize;
       noiseIndex += 1;
       ctx.save();
       ctx.translate(width / 2, height / 2);
       ctx.rotate(rot);
-      ctx.drawImage(frame, -noiseSize / 2 - noiseOffsetX, -noiseSize / 2 - noiseOffsetY);
+      ctx.drawImage(frame, -noiseSize / 2, -noiseSize / 2);
       ctx.restore();
     }
 
