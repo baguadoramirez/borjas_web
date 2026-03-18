@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Experimento de seguimiento</title>
+  <style>
+    :root {
+      --bg: #111;
+      --fg: #f2f2f2;
+      --accent: #e53935;
+      --muted: #c7c7c7;
+      --btn: #1f6feb;
+      --btn-disabled: #3a3a3a;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "IBM Plex Sans", "Segoe UI", Tahoma, sans-serif;
+    }
+    .screen {
+      display: none;
+      width: 100%;
+      height: 100%;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .screen.active {
+      display: flex;
+    }
+    .panel {
+      max-width: 760px;
+      padding: 32px;
+      background: #1b1b1b;
+      border: 1px solid #2b2b2b;
+      border-radius: 14px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+      position: relative;
+    }
+    h1 {
+      font-size: 28px;
+      margin: 0 0 16px;
+      letter-spacing: 0.2px;
+    }
+    p {
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+    input[type="text"] {
+      font-size: 16px;
+      padding: 10px 12px;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #3a3a3a;
+      background: #0f0f0f;
+      color: var(--fg);
+      margin-top: 12px;
+      box-sizing: border-box;
+    }
+    #blockLabelIntro {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      user-select: none;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    #debugLabel {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    button {
+      font-size: 16px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      background: var(--btn);
+      color: white;
+      margin-top: 16px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: var(--btn-disabled);
+      cursor: not-allowed;
+    }
+    #taskScreen {
+      position: relative;
+      background: #000;
+      overflow: hidden;
+    }
+    #taskCanvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      cursor: none;
+      touch-action: none;
+    }
+    #hud {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      color: #f3f3f3;
+      font-size: 14px;
+      background: rgba(0,0,0,0.35);
+      padding: 8px 10px;
+      border-radius: 8px;
+      user-select: none;
+    }
+    #blockSelectIntro {
+      background: #0f0f0f;
+      color: #f3f3f3;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 13px;
+    }
+    #endScreen .panel {
+      text-align: center;
+    }
+    #surveyScreen .panel {
+      text-align: left;
+    }
+    .survey-item {
+      margin-top: 14px;
+    }
+    .survey-item label {
+      display: block;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .survey-help {
+      font-size: 12px;
+      color: #9a9a9a;
+      margin-top: -2px;
+      margin-bottom: 6px;
+    }
+    .survey-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .survey-control input[type="range"] {
+      width: 100%;
+    }
+    .survey-value {
+      display: inline-block;
+      width: 36px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--fg);
+    }
+    .survey-value.touched {
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div id="introScreen" class="screen active">
+    <div class="panel">
+      <h1>Experimento de seguimiento</h1>
+      <p>Introduce tu identificador y pulsa comenzar.</p>
+      <input id="participantInput" type="text" placeholder="ID del participante" />
+      <label id="blockLabelIntro">
+        Bloque:
+        <select id="blockSelectIntro">
+          <option value="pre">pre</option>
+          <option value="post">post</option>
+        </select>
+      </label>
+      <label id="debugLabel">
+        <input id="debugCheck" type="checkbox" />
+        Debug
+      </label>
+      <button id="startBtn" disabled>Comenzar</button>
+    </div>
+  </div>
+
+  <div id="instructionsScreen" class="screen">
+    <div class="panel">
+      <h1>Instrucciones</h1>
+      <p>Debes seguir con el cursor rojo al objetivo que se mueve de manera continua por la pantalla.</p>
+      <p>El objetivo es un <strong>blob</strong> gaussiano sobre un fondo de ruido. Mantén el punto rojo centrado sobre el objetivo en todo momento.</p>
+      <p>Antes de empezar habrá un bloque de entrenamiento de 25 segundos. Después, la tarea consta de 18 bloques de 25 segundos (6 condiciones × 3 repeticiones). No hay descansos.</p>
+      <button id="continueBtn">Continuar</button>
+    </div>
+  </div>
+
+  <div id="confirmScreen" class="screen">
+    <div class="panel">
+      <h1>Confirmación</h1>
+      <p>¿Has entendido la tarea y quieres continuar?</p>
+      <button id="confirmBtn">Sí, continuar</button>
+    </div>
+  </div>
+
+  <div id="postTrainingScreen" class="screen">
+    <div class="panel">
+      <h1>Entrenamiento completado</h1>
+      <p>¿Quieres continuar con la tarea principal?</p>
+      <button id="postTrainingBtn">Sí, continuar</button>
+    </div>
+  </div>
+
+  <div id="taskScreen" class="screen">
+    <canvas id="taskCanvas"></canvas>
+    <div id="hud">
+      <div id="hudText">Preparando…</div>
+    </div>
+  </div>
+
+  <div id="surveyScreen" class="screen">
+    <div class="panel">
+      <h1>Cuestionario final</h1>
+      <p>Responde del 0 (nada) al 100 (máximo) en cada ítem.</p>
+      <form id="surveyForm">
+        <div class="survey-item">
+          <label for="q_fatiga">Fatiga mental</label>
+          <div class="survey-help">Cómo de mentalmente agotado/a te sientes tras la tarea.</div>
+          <div class="survey-control">
+            <input id="q_fatiga" type="range" min="0" max="100" value="50" />
+            <span class="survey-value" data-for="q_fatiga">50</span>
+          </div>
+        </div>
+        <div class="survey-item">
+          <label for="q_esfuerzo">Esfuerzo percibido</label>
+          <div class="survey-help">Cantidad de esfuerzo mental que te ha exigido mantener el rendimiento.</div>
+          <div class="survey-control">
+            <input id="q_esfuerzo" type="range" min="0" max="100" value="50" />
+            <span class="survey-value" data-for="q_esfuerzo">50</span>
+          </div>
+        </div>
+        <div class="survey-item">
+          <label for="q_atencion">Nivel de atención/concentración</label>
+          <div class="survey-help">Grado en que lograste mantener la atención en el objetivo.</div>
+          <div class="survey-control">
+            <input id="q_atencion" type="range" min="0" max="100" value="50" />
+            <span class="survey-value" data-for="q_atencion">50</span>
+          </div>
+        </div>
+        <div class="survey-item">
+          <label for="q_somnolencia">Somnolencia</label>
+          <div class="survey-help">Sensación de sueño o cabeceo durante la tarea.</div>
+          <div class="survey-control">
+            <input id="q_somnolencia" type="range" min="0" max="100" value="50" />
+            <span class="survey-value" data-for="q_somnolencia">50</span>
+          </div>
+        </div>
+        <div class="survey-item">
+          <label for="q_distraccion">Distracción/mente divagando</label>
+          <div class="survey-help">Frecuencia con la que tu mente se fue a otros pensamientos.</div>
+          <div class="survey-control">
+            <input id="q_distraccion" type="range" min="0" max="100" value="50" />
+            <span class="survey-value" data-for="q_distraccion">50</span>
+          </div>
+        </div>
+        <div class="survey-item">
+          <label for="q_motivacion">Motivación</label>
+          <div class="survey-help">Ganas de hacerlo bien y seguir centrado/a en la tarea.</div>
+          <div class="survey-control">
+            <input id="q_motivacion" type="range" min="0" max="100" value="50" />
+            <span class="survey-value" data-for="q_motivacion">50</span>
+          </div>
+        </div>
+        <div class="survey-item">
+          <label for="q_estres">Estrés/tensión</label>
+          <div class="survey-help">Nivel de presión o nerviosismo que sentiste.</div>
+          <div class="survey-control">
+            <input id="q_estres" type="range" min="0" max="100" value="50" />
+            <span class="survey-value" data-for="q_estres">50</span>
+          </div>
+        </div>
+        <div class="survey-item">
+          <label for="q_dificultad">Dificultad percibida</label>
+          <div class="survey-help">Qué tan difícil te resultó mantener el cursor sobre el objetivo.</div>
+          <div class="survey-control">
+            <input id="q_dificultad" type="range" min="0" max="100" value="50" />
+            <span class="survey-value" data-for="q_dificultad">50</span>
+          </div>
+        </div>
+        <div class="survey-item">
+          <label for="q_carga">Carga mental global</label>
+          <div class="survey-help">Exigencia mental total que percibiste en la tarea.</div>
+          <div class="survey-control">
+            <input id="q_carga" type="range" min="0" max="100" value="50" />
+            <span class="survey-value" data-for="q_carga">50</span>
+          </div>
+        </div>
+        <div class="survey-item">
+          <label for="q_monotonia">Monotonía/aburrimiento</label>
+          <div class="survey-help">Cuánto se te hizo repetitiva o aburrida la tarea.</div>
+          <div class="survey-control">
+            <input id="q_monotonia" type="range" min="0" max="100" value="50" />
+            <span class="survey-value" data-for="q_monotonia">50</span>
+          </div>
+        </div>
+        <button id="surveySubmitBtn" type="submit">Finalizar y descargar</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="endScreen" class="screen">
+    <div class="panel">
+      <h1>Finalizado</h1>
+      <p>Gracias por participar.</p>
+      <button id="downloadBtn">Descargar datos (CSV)</button>
+    </div>
+  </div>
+
+  <script>
+    const introScreen = document.getElementById("introScreen");
+    const instructionsScreen = document.getElementById("instructionsScreen");
+    const confirmScreen = document.getElementById("confirmScreen");
+    const postTrainingScreen = document.getElementById("postTrainingScreen");
+    const taskScreen = document.getElementById("taskScreen");
+    const surveyScreen = document.getElementById("surveyScreen");
+    const endScreen = document.getElementById("endScreen");
+    const startBtn = document.getElementById("startBtn");
+    const continueBtn = document.getElementById("continueBtn");
+    const confirmBtn = document.getElementById("confirmBtn");
+    const postTrainingBtn = document.getElementById("postTrainingBtn");
+    const participantInput = document.getElementById("participantInput");
+    const blockSelectIntro = document.getElementById("blockSelectIntro");
+    const debugCheck = document.getElementById("debugCheck");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const surveyForm = document.getElementById("surveyForm");
+    const surveySubmitBtn = document.getElementById("surveySubmitBtn");
+    const canvas = document.getElementById("taskCanvas");
+    const hud = document.getElementById("hud");
+    const hudText = document.getElementById("hudText");
+    const ctx = canvas.getContext("2d");
+
+    const BLOB_SDS = [20, 40, 60];
+    const REPETITIONS = 3;
+    const PRODUCTION = {
+      rwSDs: [3, 6, 9],
+      trialMs: 25000
+    };
+    const DEBUG = {
+      rwSDs: [3, 6, 9],
+      trialMs: 100
+    };
+    let TRAINING_DURATION_MS = 25000;
+
+    let RW_SDS = PRODUCTION.rwSDs;
+    let TRIAL_DURATION_MS = PRODUCTION.trialMs;
+
+    const noiseContrast = 0.92; // Michelson
+    const noiseMean = 0.5;
+    const noiseAmp = noiseContrast / 2;
+
+    let participantId = "";
+    let blockLabel = "pre";
+    let width = 0;
+    let height = 0;
+    let dpr = window.devicePixelRatio || 1;
+    let running = false;
+    let trialIndex = 0;
+    let trials = [];
+    let trainingCondition = null;
+    let trainingActive = false;
+    let pausedAfterTraining = false;
+    let expStart = 0;
+    let trialStart = 0;
+    let lastFrame = 0;
+    let frameCount = 0;
+    let autoDownloadedTracking = false;
+    let autoDownloadedSurvey = false;
+    let surveyCompleted = false;
+    let surveyResponses = {
+      fatiga: 50,
+      esfuerzo: 50,
+      atencion: 50,
+      somnolencia: 50,
+      distraccion: 50,
+      motivacion: 50,
+      estres: 50,
+      dificultad: 50,
+      carga: 50,
+      monotonia: 50
+    };
+    let target = { x: 0, y: 0 };
+    let cursor = { x: 0, y: 0 };
+    let cursorReady = false;
+    let recenterFramesRemaining = 0;
+
+    let dataLog = null;
+    let logCapacity = 0;
+    let logCount = 0;
+
+    const blobCache = new Map();
+    const coloredBlobCache = new Map();
+    const NOISE_FRAME_COUNT = 16;
+    let noiseFrames = [];
+    let noiseSize = 0;
+    let noiseIndex = 0;
+    let noiseOffsetX = 0;
+    let noiseOffsetY = 0;
+    let noiseVelX = 0.6;
+    let noiseVelY = 0.4;
+
+    function setScreen(active) {
+      [introScreen, instructionsScreen, confirmScreen, postTrainingScreen, taskScreen, surveyScreen, endScreen].forEach(s => s.classList.remove("active"));
+      active.classList.add("active");
+    }
+
+    function cmToPx(cm) {
+      return (cm / 2.54) * 96; // CSS px at 96dpi
+    }
+
+    function gaussianRandom() {
+      let u = 0, v = 0;
+      while (u === 0) u = Math.random();
+      while (v === 0) v = Math.random();
+      return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    }
+
+    function buildTrials() {
+      const list = [];
+      for (let r = 0; r < REPETITIONS; r++) {
+        for (const rw of RW_SDS) {
+          for (const blob of BLOB_SDS) {
+            list.push({ rwSD: rw, blobSD: blob });
+          }
+        }
+      }
+      // Shuffle
+      for (let i = list.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [list[i], list[j]] = [list[j], list[i]];
+      }
+      return list;
+    }
+
+    function initDataLog(expectedFrames) {
+      logCapacity = Math.max(1000, expectedFrames);
+      dataLog = {
+        tExp: new Float32Array(logCapacity),
+        tTrial: new Float32Array(logCapacity),
+        frame: new Int32Array(logCapacity),
+        block: new Int8Array(logCapacity),
+        trial: new Int32Array(logCapacity),
+        rwSD: new Float32Array(logCapacity),
+        blobSD: new Float32Array(logCapacity),
+        targetX: new Float32Array(logCapacity),
+        targetY: new Float32Array(logCapacity),
+        cursorX: new Float32Array(logCapacity),
+        cursorY: new Float32Array(logCapacity)
+      };
+      logCount = 0;
+    }
+
+    function growDataLog(minCapacity) {
+      const newCap = Math.max(minCapacity, Math.floor(logCapacity * 1.5));
+      const next = {
+        tExp: new Float32Array(newCap),
+        tTrial: new Float32Array(newCap),
+        frame: new Int32Array(newCap),
+        block: new Int8Array(newCap),
+        trial: new Int32Array(newCap),
+        rwSD: new Float32Array(newCap),
+        blobSD: new Float32Array(newCap),
+        targetX: new Float32Array(newCap),
+        targetY: new Float32Array(newCap),
+        cursorX: new Float32Array(newCap),
+        cursorY: new Float32Array(newCap)
+      };
+      next.tExp.set(dataLog.tExp);
+      next.tTrial.set(dataLog.tTrial);
+      next.frame.set(dataLog.frame);
+      next.block.set(dataLog.block);
+      next.trial.set(dataLog.trial);
+      next.rwSD.set(dataLog.rwSD);
+      next.blobSD.set(dataLog.blobSD);
+      next.targetX.set(dataLog.targetX);
+      next.targetY.set(dataLog.targetY);
+      next.cursorX.set(dataLog.cursorX);
+      next.cursorY.set(dataLog.cursorY);
+      dataLog = next;
+      logCapacity = newCap;
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+
+      buildNoiseFrames();
+    }
+
+    function getBlob(sd) {
+      if (blobCache.has(sd)) return blobCache.get(sd);
+
+      const radius = Math.ceil(sd * 3);
+      const size = radius * 2 + 1;
+      const off = document.createElement("canvas");
+      off.width = size;
+      off.height = size;
+      const octx = off.getContext("2d");
+      const img = octx.createImageData(size, size);
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const dx = x - radius;
+          const dy = y - radius;
+          const r2 = dx * dx + dy * dy;
+          const a = Math.exp(-0.5 * r2 / (sd * sd));
+          const idx = (y * size + x) * 4;
+          img.data[idx] = 255;
+          img.data[idx + 1] = 255;
+          img.data[idx + 2] = 255;
+          img.data[idx + 3] = Math.floor(255 * a);
+        }
+      }
+      octx.putImageData(img, 0, 0);
+      blobCache.set(sd, off);
+      return off;
+    }
+
+    function getColoredBlob(sd, color) {
+      const key = `${sd}:${color}`;
+      if (coloredBlobCache.has(key)) return coloredBlobCache.get(key);
+      const base = getBlob(sd);
+      const off = document.createElement("canvas");
+      off.width = base.width;
+      off.height = base.height;
+      const octx = off.getContext("2d");
+      octx.drawImage(base, 0, 0);
+      octx.globalCompositeOperation = "source-in";
+      octx.fillStyle = color;
+      octx.fillRect(0, 0, off.width, off.height);
+      octx.globalCompositeOperation = "source-over";
+      coloredBlobCache.set(key, off);
+      return off;
+    }
+
+    function buildNoiseFrames() {
+      const size = Math.max(1, Math.ceil(Math.max(width, height) * 1.2));
+      if (size === noiseSize && noiseFrames.length === NOISE_FRAME_COUNT) return;
+      noiseSize = size;
+      noiseFrames = [];
+      noiseIndex = 0;
+      noiseOffsetX = 0;
+      noiseOffsetY = 0;
+      for (let f = 0; f < NOISE_FRAME_COUNT; f++) {
+        const c = document.createElement("canvas");
+        c.width = size;
+        c.height = size;
+        const cctx = c.getContext("2d");
+        const img = cctx.createImageData(size, size);
+        for (let i = 0; i < size * size; i++) {
+          const val = noiseMean + noiseAmp * (Math.random() * 2 - 1);
+          const gray = Math.round(Math.max(0, Math.min(1, val)) * 255);
+          const idx = i * 4;
+          img.data[idx] = gray;
+          img.data[idx + 1] = gray;
+          img.data[idx + 2] = gray;
+          img.data[idx + 3] = 255;
+        }
+        cctx.putImageData(img, 0, 0);
+        noiseFrames.push(c);
+      }
+    }
+
+    function updateNoise() {
+      if (!noiseFrames.length) buildNoiseFrames();
+      const frame = noiseFrames[noiseIndex % noiseFrames.length];
+      const rot = (noiseIndex % 4) * (Math.PI / 2);
+      noiseOffsetX += noiseVelX;
+      noiseOffsetY += noiseVelY;
+      if (noiseOffsetX > noiseSize) noiseOffsetX -= noiseSize;
+      if (noiseOffsetY > noiseSize) noiseOffsetY -= noiseSize;
+      noiseIndex += 1;
+      ctx.save();
+      ctx.translate(width / 2, height / 2);
+      ctx.rotate(rot);
+      ctx.drawImage(frame, -noiseSize / 2 - noiseOffsetX, -noiseSize / 2 - noiseOffsetY);
+      ctx.restore();
+    }
+
+    function startTrial() {
+      const current = trials[trialIndex];
+      trialStart = performance.now();
+      lastFrame = trialStart;
+      frameCount = 0;
+      hudText.textContent = `Bloque ${trialIndex + 1}/${trials.length}`;
+    }
+
+    function startTraining() {
+      trainingActive = true;
+      trialStart = performance.now();
+      lastFrame = trialStart;
+      frameCount = 0;
+      hudText.textContent = "Entrenamiento (20 s)";
+    }
+
+    function advanceTrial() {
+      trialIndex++;
+      if (trialIndex >= trials.length) {
+        running = false;
+        setScreen(surveyScreen);
+        triggerAutoDownloadTracking();
+        return;
+      }
+      startTrial();
+    }
+
+    function updateTarget(dt) {
+      const current = trainingActive ? trainingCondition : trials[trialIndex];
+      const centerX = width / 2;
+      const centerY = height / 2;
+      if (recenterFramesRemaining > 0) {
+        const dx = centerX - target.x;
+        const dy = centerY - target.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        const step = current.rwSD;
+        target.x += (dx / dist) * step;
+        target.y += (dy / dist) * step;
+        recenterFramesRemaining -= 1;
+      } else {
+        const stepX = gaussianRandom() * current.rwSD;
+        const stepY = gaussianRandom() * current.rwSD;
+        target.x += stepX;
+        target.y += stepY;
+      }
+
+      const margin = current.blobSD * 3;
+      if (target.x < margin) { target.x = margin; }
+      if (target.x > width - margin) { target.x = width - margin; }
+      if (target.y < margin) { target.y = margin; }
+      if (target.y > height - margin) { target.y = height - margin; }
+
+      const distFromCenter = Math.hypot(target.x - centerX, target.y - centerY);
+      if (distFromCenter > 400) {
+        recenterFramesRemaining = Math.max(recenterFramesRemaining, 5);
+      }
+    }
+
+    function drawFrame(time) {
+      if (!running) return;
+      const current = trainingActive ? trainingCondition : trials[trialIndex];
+      const durationMs = trainingActive ? TRAINING_DURATION_MS : TRIAL_DURATION_MS;
+      const elapsed = time - trialStart;
+
+      if (elapsed >= durationMs) {
+        if (trainingActive) {
+          trainingActive = false;
+          pausedAfterTraining = true;
+          running = false;
+          setScreen(postTrainingScreen);
+        } else {
+          advanceTrial();
+          if (running) {
+            requestAnimationFrame(drawFrame);
+          }
+        }
+        return;
+      }
+
+      frameCount += 1;
+      updateTarget(time - lastFrame);
+      lastFrame = time;
+
+      updateNoise();
+
+      const blob = getBlob(current.blobSD);
+      const radius = Math.ceil(current.blobSD * 3);
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      ctx.drawImage(blob, target.x - radius, target.y - radius);
+      ctx.restore();
+
+      const cursorSD = 3;
+      const cursorBlob = getColoredBlob(cursorSD, "#e53935");
+      const cursorRadius = Math.ceil(cursorSD * 3);
+      if (!cursorReady) {
+        cursor.x = width / 2;
+        cursor.y = height / 2;
+      }
+      ctx.drawImage(cursorBlob, cursor.x - cursorRadius, cursor.y - cursorRadius);
+
+      if (logCount >= logCapacity) growDataLog(logCapacity + 1);
+      dataLog.tExp[logCount] = time - expStart;
+      dataLog.tTrial[logCount] = time - trialStart;
+      dataLog.frame[logCount] = frameCount;
+      dataLog.block[logCount] = blockLabel === "pre" ? 1 : 2;
+      dataLog.trial[logCount] = trainingActive ? 0 : (trialIndex + 1);
+      dataLog.rwSD[logCount] = current.rwSD;
+      dataLog.blobSD[logCount] = current.blobSD;
+      dataLog.targetX[logCount] = target.x;
+      dataLog.targetY[logCount] = target.y;
+      dataLog.cursorX[logCount] = cursor.x;
+      dataLog.cursorY[logCount] = cursor.y;
+      logCount += 1;
+
+      requestAnimationFrame(drawFrame);
+    }
+
+    function startExperiment() {
+      trials = buildTrials();
+      trialIndex = 0;
+      running = true;
+      resize();
+      const expectedMs = TRAINING_DURATION_MS + trials.length * TRIAL_DURATION_MS;
+      const expectedFrames = Math.ceil((expectedMs / 1000) * 90 * 1.3);
+      initDataLog(expectedFrames);
+      expStart = performance.now();
+      pausedAfterTraining = false;
+      trainingCondition = {
+        rwSD: RW_SDS[0],
+        blobSD: BLOB_SDS[Math.floor(BLOB_SDS.length / 2)]
+      };
+      target.x = width / 2;
+      target.y = height / 2;
+      startTraining();
+      requestAnimationFrame(drawFrame);
+    }
+
+    function formatDateStamp() {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const hh = String(d.getHours()).padStart(2, "0");
+      const min = String(d.getMinutes()).padStart(2, "0");
+      return `${yyyy}${mm}${dd}${hh}${min}`;
+    }
+
+    function buildFileBase(suffix) {
+      const id = participantId || "participante";
+      const blockNum = blockLabel === "pre" ? 1 : 2;
+      const dateStamp = formatDateStamp();
+      return `meu_${id}_${blockNum}_${dateStamp}_${suffix}.csv`;
+    }
+
+    function downloadTaskCSV() {
+      const header = [
+        "participant", "timestampExp", "timestampTrial", "frame", "block", "trial", "rwSD", "blobSD", "targetX", "targetY", "cursorX", "cursorY"
+      ];
+      const rows = new Array(logCount);
+      for (let i = 0; i < logCount; i++) {
+        rows[i] = [
+          participantId,
+          Math.round(dataLog.tExp[i]),
+          Math.round(dataLog.tTrial[i]),
+          dataLog.frame[i],
+          dataLog.block[i],
+          dataLog.trial[i],
+          dataLog.rwSD[i],
+          dataLog.blobSD[i],
+          dataLog.targetX[i].toFixed(2),
+          dataLog.targetY[i].toFixed(2),
+          Math.round(dataLog.cursorX[i]),
+          Math.round(dataLog.cursorY[i])
+        ].join(",");
+      }
+      const csv = [header.join(","), ...rows].join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = buildFileBase("tracking");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadSurveyCSV() {
+      const header = [
+        "participant", "block",
+        "sv_fatiga", "sv_esfuerzo", "sv_atencion", "sv_somnolencia", "sv_distraccion", "sv_motivacion", "sv_estres", "sv_dificultad", "sv_carga", "sv_monotonia"
+      ];
+      const row = [
+        participantId,
+        blockLabel === "pre" ? 1 : 2,
+        surveyResponses.fatiga,
+        surveyResponses.esfuerzo,
+        surveyResponses.atencion,
+        surveyResponses.somnolencia,
+        surveyResponses.distraccion,
+        surveyResponses.motivacion,
+        surveyResponses.estres,
+        surveyResponses.dificultad,
+        surveyResponses.carga,
+        surveyResponses.monotonia
+      ].join(",");
+      const csv = [header.join(","), row].join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = buildFileBase("sv");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadAllCSVs() {
+      downloadTaskCSV();
+      downloadSurveyCSV();
+    }
+
+    function triggerAutoDownloadTracking() {
+      if (autoDownloadedTracking) return;
+      autoDownloadedTracking = true;
+      // Give the UI a moment to render the survey screen before downloading
+      setTimeout(() => {
+        downloadTaskCSV();
+      }, 300);
+    }
+
+    function triggerAutoDownloadSurvey() {
+      if (autoDownloadedSurvey) return;
+      if (!surveyCompleted) return;
+      autoDownloadedSurvey = true;
+      // Give the UI a moment to render the end screen before downloading
+      setTimeout(() => {
+        downloadSurveyCSV();
+      }, 300);
+    }
+
+    function updateSurveyValue(id, value) {
+      const el = document.querySelector(`.survey-value[data-for="${id}"]`);
+      if (el) {
+        el.textContent = value;
+        const input = document.getElementById(id);
+        const touched = input && input.dataset.touched === "true";
+        el.classList.toggle("touched", Boolean(touched));
+      }
+    }
+
+    function updateSurveyReady() {
+      const sliders = document.querySelectorAll("#surveyForm input[type='range']");
+      const allTouched = Array.from(sliders).every(input => input.dataset.touched === "true");
+      surveySubmitBtn.disabled = !allTouched;
+    }
+
+    function initSurveySliders() {
+      const sliders = document.querySelectorAll("#surveyForm input[type='range']");
+      sliders.forEach(input => {
+        const value = Math.floor(Math.random() * 101);
+        input.value = value;
+        input.dataset.touched = "false";
+        updateSurveyValue(input.id, value);
+      });
+      updateSurveyReady();
+    }
+
+    participantInput.addEventListener("input", () => {
+      startBtn.disabled = participantInput.value.trim().length === 0;
+    });
+
+    startBtn.addEventListener("click", () => {
+      participantId = participantInput.value.trim();
+      blockLabel = blockSelectIntro.value;
+      autoDownloadedTracking = false;
+      autoDownloadedSurvey = false;
+      surveyCompleted = false;
+      surveyResponses = {
+        fatiga: 50,
+        esfuerzo: 50,
+        atencion: 50,
+        somnolencia: 50,
+        distraccion: 50,
+        motivacion: 50,
+        estres: 50,
+        dificultad: 50,
+        carga: 50,
+        monotonia: 50
+      };
+      initSurveySliders();
+      if (debugCheck.checked) {
+        RW_SDS = DEBUG.rwSDs;
+        TRIAL_DURATION_MS = DEBUG.trialMs;
+        TRAINING_DURATION_MS = DEBUG.trialMs;
+      } else {
+        RW_SDS = PRODUCTION.rwSDs;
+        TRIAL_DURATION_MS = PRODUCTION.trialMs;
+        TRAINING_DURATION_MS = PRODUCTION.trialMs;
+      }
+      setScreen(instructionsScreen);
+      const el = document.documentElement;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      } else if (el.msRequestFullscreen) {
+        el.msRequestFullscreen();
+      }
+    });
+
+    continueBtn.addEventListener("click", () => {
+      setScreen(confirmScreen);
+    });
+
+    confirmBtn.addEventListener("click", () => {
+      setScreen(taskScreen);
+      resize();
+      startExperiment();
+    });
+
+    postTrainingBtn.addEventListener("click", () => {
+      if (!pausedAfterTraining) return;
+      pausedAfterTraining = false;
+      setScreen(taskScreen);
+      resize();
+      running = true;
+      startTrial();
+      requestAnimationFrame(drawFrame);
+    });
+
+    downloadBtn.addEventListener("click", downloadAllCSVs);
+
+    document.querySelectorAll("#surveyForm input[type='range']").forEach(input => {
+      input.addEventListener("input", (e) => {
+        const value = Number(e.target.value);
+        updateSurveyValue(e.target.id, value);
+        input.dataset.touched = "true";
+        updateSurveyValue(e.target.id, value);
+        updateSurveyReady();
+      });
+      input.addEventListener("pointerdown", () => {
+        input.dataset.touched = "true";
+        updateSurveyValue(input.id, Number(input.value));
+        updateSurveyReady();
+      });
+      input.addEventListener("change", () => {
+        input.dataset.touched = "true";
+        updateSurveyValue(input.id, Number(input.value));
+        updateSurveyReady();
+      });
+    });
+
+    surveyForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      surveyResponses = {
+        fatiga: Number(document.getElementById("q_fatiga").value),
+        esfuerzo: Number(document.getElementById("q_esfuerzo").value),
+        atencion: Number(document.getElementById("q_atencion").value),
+        somnolencia: Number(document.getElementById("q_somnolencia").value),
+        distraccion: Number(document.getElementById("q_distraccion").value),
+        motivacion: Number(document.getElementById("q_motivacion").value),
+        estres: Number(document.getElementById("q_estres").value),
+        dificultad: Number(document.getElementById("q_dificultad").value),
+        carga: Number(document.getElementById("q_carga").value),
+        monotonia: Number(document.getElementById("q_monotonia").value)
+      };
+      surveyCompleted = true;
+      setScreen(endScreen);
+      triggerAutoDownloadSurvey();
+    });
+
+    window.addEventListener("resize", () => {
+      if (!running) return;
+      resize();
+    });
+
+    document.addEventListener("fullscreenchange", () => {
+      if (!running) return;
+      resize();
+    });
+
+    function updateCursorFromEvent(e) {
+      const rect = canvas.getBoundingClientRect();
+      cursor.x = e.clientX - rect.left;
+      cursor.y = e.clientY - rect.top;
+      cursorReady = true;
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      canvas.setPointerCapture(e.pointerId);
+      updateCursorFromEvent(e);
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      updateCursorFromEvent(e);
+    });
+
+    canvas.addEventListener("pointerup", (e) => {
+      if (canvas.hasPointerCapture(e.pointerId)) {
+        canvas.releasePointerCapture(e.pointerId);
+      }
+    });
+
+    resize();
+  </script>
+</body>
+</html>
