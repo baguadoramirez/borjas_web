@@ -173,7 +173,7 @@
     <div id="introScreen" class="screen active">
     <div class="panel">
       <h1>Experimento de seguimiento</h1>
-      <p>Versión 0.1v</p>
+      <p>Versión 0.2v</p>
       <p>Introduce tu identificador y pulsa comenzar.</p>
       <input id="participantInput" type="text" placeholder="ID del participante" />
       <label id="blockLabelIntro">
@@ -349,13 +349,13 @@
     const REPETITIONS = 3;
     const PRODUCTION = {
       rwSDs: [3, 6, 9],
-      trialMs: 25000
+      trialMs: 20000
     };
     const DEBUG = {
       rwSDs: [3, 6, 9],
       trialMs: 100
     };
-    let TRAINING_DURATION_MS = 25000;
+    let TRAINING_DURATION_MS = 20000;
 
     let RW_SDS = PRODUCTION.rwSDs;
     let TRIAL_DURATION_MS = PRODUCTION.trialMs;
@@ -402,12 +402,17 @@
     let dataLog = null;
     let logCapacity = 0;
     let logCount = 0;
+    let randX = null;
+    let randY = null;
+    let randCapacity = 0;
+    let randIndex = 0;
 
     const blobCache = new Map();
     const coloredBlobCache = new Map();
     const NOISE_FRAME_COUNT = 16;
     let noiseFrames = [];
     let noiseSize = 0;
+    let noiseFrameSize = 0;
     let noiseIndex = 0;
 
     function setScreen(active) {
@@ -459,6 +464,14 @@
         cursorY: new Float32Array(logCapacity)
       };
       logCount = 0;
+      randCapacity = logCapacity;
+      randIndex = 0;
+      randX = new Float32Array(randCapacity);
+      randY = new Float32Array(randCapacity);
+      for (let i = 0; i < randCapacity; i++) {
+        randX[i] = gaussianRandom();
+        randY[i] = gaussianRandom();
+      }
     }
 
     function growDataLog(minCapacity) {
@@ -489,6 +502,17 @@
       next.cursorY.set(dataLog.cursorY);
       dataLog = next;
       logCapacity = newCap;
+      const nextRandX = new Float32Array(newCap);
+      const nextRandY = new Float32Array(newCap);
+      nextRandX.set(randX);
+      nextRandY.set(randY);
+      for (let i = randCapacity; i < newCap; i++) {
+        nextRandX[i] = gaussianRandom();
+        nextRandY[i] = gaussianRandom();
+      }
+      randX = nextRandX;
+      randY = nextRandY;
+      randCapacity = newCap;
     }
 
     function resize() {
@@ -551,18 +575,20 @@
     }
 
     function buildNoiseFrames() {
-      const size = Math.max(1, Math.ceil(Math.max(width, height) * 1.2));
-      if (size === noiseSize && noiseFrames.length === NOISE_FRAME_COUNT) return;
-      noiseSize = size;
+      const fullSize = Math.max(1, Math.ceil(Math.max(width, height) * 1.2));
+      const frameSize = Math.max(1, Math.ceil(fullSize / 2));
+      if (fullSize === noiseSize && frameSize === noiseFrameSize && noiseFrames.length === NOISE_FRAME_COUNT) return;
+      noiseSize = fullSize;
+      noiseFrameSize = frameSize;
       noiseFrames = [];
       noiseIndex = 0;
       for (let f = 0; f < NOISE_FRAME_COUNT; f++) {
         const c = document.createElement("canvas");
-        c.width = size;
-        c.height = size;
+        c.width = frameSize;
+        c.height = frameSize;
         const cctx = c.getContext("2d");
-        const img = cctx.createImageData(size, size);
-        for (let i = 0; i < size * size; i++) {
+        const img = cctx.createImageData(frameSize, frameSize);
+        for (let i = 0; i < frameSize * frameSize; i++) {
           const val = noiseMean + noiseAmp * (Math.random() * 2 - 1);
           const gray = Math.round(Math.max(0, Math.min(1, val)) * 255);
           const idx = i * 4;
@@ -584,7 +610,7 @@
       ctx.save();
       ctx.translate(width / 2, height / 2);
       ctx.rotate(rot);
-      ctx.drawImage(frame, -noiseSize / 2, -noiseSize / 2);
+      ctx.drawImage(frame, -noiseSize / 2, -noiseSize / 2, noiseSize, noiseSize);
       ctx.restore();
     }
 
@@ -628,8 +654,12 @@
         target.y += (dy / dist) * step;
         recenterFramesRemaining -= 1;
       } else {
-        const stepX = gaussianRandom() * current.rwSD;
-        const stepY = gaussianRandom() * current.rwSD;
+        if (randIndex >= randCapacity) {
+          growDataLog(logCapacity + 1);
+        }
+        const stepX = randX[randIndex] * current.rwSD;
+        const stepY = randY[randIndex] * current.rwSD;
+        randIndex += 1;
         target.x += stepX;
         target.y += stepY;
       }
@@ -712,7 +742,7 @@
       running = true;
       resize();
       const expectedMs = TRAINING_DURATION_MS + trials.length * TRIAL_DURATION_MS;
-      const expectedFrames = Math.ceil((expectedMs / 1000) * 90 * 1.3);
+      const expectedFrames = Math.ceil((expectedMs / 1000) * 90 * 1.1);
       initDataLog(expectedFrames);
       expStart = performance.now();
       pausedAfterTraining = false;
