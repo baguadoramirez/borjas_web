@@ -1,6 +1,6 @@
 # Web personal de Borja Aguado
 
-Sitio web personal y academico de Borja Aguado. Incluye una pagina de inicio, curriculum vitae, enlaces a perfiles academicos y una coleccion de experimentos interactivos de percepcion, atencion, memoria y psicofisica que se ejecutan directamente en el navegador.
+Sitio web personal y academico de Borja Aguado (2025). Incluye una pagina de inicio, curriculum vitae, enlaces a perfiles academicos y una coleccion de experimentos interactivos de percepcion, atencion, memoria y psicofisica que se ejecutan directamente en el navegador.
 
 ## Contenido
 
