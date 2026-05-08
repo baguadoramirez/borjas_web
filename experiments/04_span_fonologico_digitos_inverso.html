@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Fonologic Span - Repeticion Directa</title>
+  <title>Span fonologico (digitos) - Repeticion inversa</title>
   <link rel="stylesheet" href="experiment.css">
   <style>
     #experimentStage {
@@ -122,8 +122,10 @@
 <body class="experiment-page">
   <div class="experiment-shell">
     <section id="setup" class="panel">
-      <h1>Fonologic Span (Repeticion directa)</h1>
+      <h1>Span fonologico (digitos) - Repeticion inversa</h1>
       <p>Prueba de memoria auditiva basada en secuencias de numeros.</p>
+      <p class="helper-text"><strong>Referencia clasica:</strong> Wechsler, D. (1955). <em>Manual for the Wechsler Adult Intelligence Scale</em>; Griffin &amp; Heffernan (1983) para la distincion forward/backward.</p>
+      <p class="helper-text"><strong>Privacidad:</strong> este experimento se ejecuta localmente en tu navegador. Los datos del experimento no se envian al creador de la web; solo se guardan o descargan en tu propio dispositivo.</p>
 
       <h2>Informacion del participante</h2>
       <div class="form-grid">
@@ -166,12 +168,12 @@
       <h2>Instrucciones</h2>
       <div class="lang-block active" data-lang="es">
         <p>A continuacion, escucharas series de numeros que comenzaran despues de un sonido y acabaran antes de que se repita el mismo sonido.</p>
-        <p>Despues de escuchar el segundo sonido, escribe los mismos numeros en el mismo orden usando el teclado.</p>
+        <p>Despues de escuchar el segundo sonido, escribe los mismos numeros en orden inverso usando el teclado.</p>
         <p>Mientras veas la senal STOP, todavia no respondas.</p>
       </div>
       <div class="lang-block" data-lang="ca">
         <p>A continuacio, escoltaras series de numeros que començaran despres d'un so i acabaran abans que es repeteixi el mateix so.</p>
-        <p>Despres d'escoltar el segon so, escriu els mateixos numeros en el mateix ordre usant el teclat.</p>
+        <p>Despres d'escoltar el segon so, escriu els mateixos numeros en ordre invers usant el teclat.</p>
         <p>Mentre vegis el senyal STOP, encara no responguis.</p>
       </div>
       <div class="button-row">
@@ -186,7 +188,7 @@
         <span>No respondas todavia</span>
       </div>
       <div id="inputContainer" class="hidden">
-        <p id="responsePrompt">Escribe la secuencia y pulsa Enviar.</p>
+        <p id="responsePrompt">Escribe la secuencia en orden inverso y pulsa Enviar.</p>
         <input id="responseInput" type="text" inputmode="numeric" autocomplete="off" maxlength="18">
         <div class="button-row">
           <button id="submitButton" type="button">Enviar respuesta</button>
@@ -343,9 +345,9 @@ function setLanguage(lang) {
   langBlocks.forEach(block => {
     block.classList.toggle("active", block.dataset.lang === lang);
   });
-  responsePrompt.textContent = lang === "ca"
-    ? "Escriu la sequencia i prem Enviar."
-    : "Escribe la secuencia y pulsa Enviar.";
+    responsePrompt.textContent = lang === "ca"
+      ? "Escriu la sequencia en ordre invers i prem Enviar."
+      : "Escribe la secuencia en orden inverso y pulsa Enviar.";
 }
 
 function playBeep(type) {
@@ -541,8 +543,9 @@ function submitResponse() {
 
 function checkResponse(response, responseTime) {
   const respDigits = response.split('').map(ch => parseInt(ch, 10));
-  const correctIO = respDigits.length === sequence.length && respDigits.every((d, i) => d === sequence[i]);
-  const aciertos = sequence.reduce((sum, d, i) => sum + (respDigits[i] === d ? 1 : 0), 0);
+  const expectedSequence = sequence.slice().reverse();
+  const correctIO = respDigits.length === expectedSequence.length && respDigits.every((d, i) => d === expectedSequence[i]);
+  const aciertos = expectedSequence.reduce((sum, d, i) => sum + (respDigits[i] === d ? 1 : 0), 0);
   const acumulado = results.reduce((sum, r) => sum + r.aciertos, 0);
 
   results.push({
@@ -551,6 +554,7 @@ function checkResponse(response, responseTime) {
     sex: participant.sex,
     trial: trialCount,
     sequence: sequence.join(''),
+    expected_response: expectedSequence.join(''),
     response: response,
     correct_io: correctIO ? 1 : 0,
     mean: 0,
@@ -579,14 +583,14 @@ function checkResponse(response, responseTime) {
 }
 
 function downloadCSV() {
-  const header = "participant_id,age,sex,trial,sequence,response,correct_io,mean,sd,aciertos,acumulado_aciertos,tiempo_respuesta\n";
+  const header = "participant_id,age,sex,trial,sequence,expected_response,response,correct_io,mean,sd,aciertos,acumulado_aciertos,tiempo_respuesta\n";
   const body = results.map(r =>
-    `${r.participant_id},${r.age},${r.sex},${r.trial},${r.sequence},${r.response},${r.correct_io},${r.mean},${r.sd},${r.aciertos},${r.acumulado_aciertos},${r.tiempo_respuesta}`
+    `${r.participant_id},${r.age},${r.sex},${r.trial},${r.sequence},${r.expected_response},${r.response},${r.correct_io},${r.mean},${r.sd},${r.aciertos},${r.acumulado_aciertos},${r.tiempo_respuesta}`
   ).join("\n");
   const blob = new Blob([header + body], { type: "text/csv" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "fonologic_span_results.csv";
+  link.download = "fonologic_span_inverse_results.csv";
   link.click();
 }
 

@@ -3,104 +3,37 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Experimento de seguimiento</title>
+  <title>Seguimiento continuo con delay visomotor</title>
+  <link rel="stylesheet" href="experiment.css">
   <style>
-    :root {
-      --bg: #111;
-      --fg: #f2f2f2;
-      --accent: #e53935;
-      --muted: #c7c7c7;
-      --btn: #1f6feb;
-      --btn-disabled: #3a3a3a;
-    }
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg);
-      color: var(--fg);
-      font-family: "IBM Plex Sans", "Segoe UI", Tahoma, sans-serif;
-    }
     .screen {
       display: none;
       width: 100%;
-      height: 100%;
+      min-height: 100vh;
       align-items: center;
       justify-content: center;
-      text-align: center;
+      text-align: left;
     }
     .screen.active {
       display: flex;
     }
-    .panel {
-      max-width: 760px;
-      padding: 32px;
-      background: #1b1b1b;
-      border: 1px solid #2b2b2b;
-      border-radius: 14px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.35);
-      position: relative;
-    }
-    h1 {
-      font-size: 28px;
-      margin: 0 0 16px;
-      letter-spacing: 0.2px;
-    }
-    p {
-      font-size: 16px;
-      line-height: 1.5;
-      color: var(--muted);
-    }
-    input[type="text"] {
-      font-size: 16px;
-      padding: 10px 12px;
-      width: 100%;
-      border-radius: 8px;
-      border: 1px solid #3a3a3a;
-      background: #0f0f0f;
-      color: var(--fg);
-      margin-top: 12px;
-      box-sizing: border-box;
-    }
-    #blockLabelIntro {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 12px;
-      user-select: none;
-      color: var(--muted);
-      font-size: 14px;
-    }
     #debugLabel {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 6px;
-      user-select: none;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    button {
-      font-size: 16px;
-      padding: 10px 18px;
-      border: none;
-      border-radius: 8px;
-      background: var(--btn);
-      color: white;
-      margin-top: 16px;
-      cursor: pointer;
     }
     button:disabled {
-      background: var(--btn-disabled);
+      opacity: 0.45;
       cursor: not-allowed;
     }
     #taskScreen {
       position: relative;
       background: #000;
       overflow: hidden;
+      min-height: 100vh;
+    }
+    #taskScreen.active {
+      display: block;
     }
     #taskCanvas {
       width: 100vw;
@@ -120,27 +53,23 @@
       border-radius: 8px;
       user-select: none;
     }
-    #blockSelectIntro {
-      background: #0f0f0f;
-      color: #f3f3f3;
-      border: 1px solid #3a3a3a;
-      border-radius: 6px;
-      padding: 2px 6px;
-      font-size: 13px;
-    }
-    #endScreen .panel {
-      text-align: center;
-    }
+    .panel,
     #surveyScreen .panel {
       text-align: left;
+      text-align-last: auto;
+    }
+    #surveyForm {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 24px;
     }
     .survey-item {
-      margin-top: 14px;
+      margin-top: 0;
     }
     .survey-item label {
       display: block;
       font-size: 14px;
-      color: var(--muted);
+      color: var(--exp-muted);
       margin-bottom: 6px;
     }
     .survey-help {
@@ -157,63 +86,106 @@
     .survey-control input[type="range"] {
       width: 100%;
     }
+    .survey-control input[type="range"][data-touched="false"] {
+      opacity: 0.45;
+    }
     .survey-value {
       display: inline-block;
-      width: 36px;
-      text-align: right;
+      min-width: 108px;
+      text-align: left;
       font-variant-numeric: tabular-nums;
-      color: var(--fg);
+      color: var(--exp-text);
     }
     .survey-value.touched {
       font-weight: 700;
+      color: #8fe6a6;
+    }
+    #introScreen .panel,
+    #instructionsScreen .panel,
+    #confirmScreen .panel,
+    #postTrainingScreen .panel,
+    #endScreen .panel {
+      max-width: 920px;
+    }
+    .button-row {
+      justify-content: flex-start;
+    }
+    #surveySubmitRow {
+      grid-column: 1 / -1;
+    }
+    @media (max-width: 720px) {
+      #surveyForm {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
-<body>
+<body class="experiment-page">
+  <div class="experiment-shell">
     <div id="introScreen" class="screen active">
     <div class="panel">
-      <h1>Experimento de seguimiento</h1>
-      <p>Versión 0.3v</p>
-      <p>Introduce tu identificador y pulsa comenzar.</p>
-      <input id="participantInput" type="text" placeholder="ID del participante" />
-      <label id="blockLabelIntro">
-        Bloque:
-        <select id="blockSelectIntro">
-          <option value="pre">pre</option>
-          <option value="post">post</option>
-        </select>
-      </label>
-      <label id="debugLabel">
-        <input id="debugCheck" type="checkbox" />
-        Debug
-      </label>
-      <button id="startBtn" disabled>Comenzar</button>
+      <h1>Seguimiento continuo con delay visomotor</h1>
+      <p>Tarea de seguimiento continuo de un objetivo gaussiano en ruido visual con retraso visual del cursor.</p>
+      <p class="helper-text"><strong>Referencia clasica:</strong> Bonnen, K., Burge, J., Yates, J., Pillow, J., &amp; Cormack, L. K. (2015). <em>Continuous psychophysics: Target-tracking to measure visual sensitivity</em>. <em>Journal of Vision, 15</em>(3), 14. <a href="https://doi.org/10.1167/15.3.14">https://doi.org/10.1167/15.3.14</a></p>
+      <p class="helper-text"><strong>Privacidad:</strong> este experimento se ejecuta localmente en tu navegador. Los datos del experimento no se envian al creador de la web; solo se guardan o descargan en tu propio dispositivo.</p>
+
+      <h2>Informacion del participante</h2>
+      <div class="form-grid">
+        <label>ID participante
+          <input id="participantInput" type="text" autocomplete="off">
+        </label>
+        <label>Bloque
+          <select id="blockSelectIntro">
+            <option value="pre">pre</option>
+            <option value="post">post</option>
+          </select>
+        </label>
+        <label id="debugLabel">
+          <span>Debug</span>
+          <input id="debugCheck" type="checkbox">
+        </label>
+      </div>
+      <p class="helper-text">Introduce tu identificador y selecciona el bloque antes de comenzar.</p>
+      <div class="button-row">
+        <button id="startBtn" type="button" disabled>Continuar</button>
+      </div>
     </div>
   </div>
 
   <div id="instructionsScreen" class="screen">
     <div class="panel">
-      <h1>Instrucciones</h1>
-      <p>Debes seguir con el cursor rojo al objetivo que se mueve de manera continua por la pantalla.</p>
-      <p>El objetivo es un <strong>blob</strong> gaussiano sobre un fondo de ruido. Mantén el punto rojo centrado sobre el objetivo en todo momento.</p>
-      <p>Antes de empezar habrá un bloque de entrenamiento de 25 segundos. Después, la tarea consta de 18 bloques de 25 segundos (6 condiciones × 3 repeticiones). No hay descansos.</p>
-      <button id="continueBtn">Continuar</button>
+      <h2>Instrucciones</h2>
+      <ol>
+        <li>Sigue con el cursor rojo al objetivo que se mueve de manera continua por la pantalla.</li>
+        <li>El objetivo es un <strong>blob</strong> gaussiano sobre un fondo de ruido.</li>
+        <li>Manten el punto rojo centrado sobre el objetivo en todo momento.</li>
+        <li>En algunos bloques el cursor aparecera con un pequeno retraso respecto a tu movimiento.</li>
+        <li>Antes de empezar habra un bloque de entrenamiento. Despues, la tarea principal consta de 36 bloques.</li>
+      </ol>
+      <p class="helper-text">Procura mantener la atencion durante toda la tarea. Los datos se descargaran automaticamente al terminar.</p>
+      <div class="button-row">
+        <button id="continueBtn" type="button">Continuar</button>
+      </div>
     </div>
   </div>
 
   <div id="confirmScreen" class="screen">
-    <div class="panel">
-      <h1>Confirmación</h1>
+    <div class="panel intermediate-panel">
+      <h2>Confirmacion</h2>
       <p>¿Has entendido la tarea y quieres continuar?</p>
-      <button id="confirmBtn">Sí, continuar</button>
+      <div class="button-row">
+        <button id="confirmBtn" type="button">Si, continuar</button>
+      </div>
     </div>
   </div>
 
   <div id="postTrainingScreen" class="screen">
-    <div class="panel">
-      <h1>Entrenamiento completado</h1>
+    <div class="panel intermediate-panel">
+      <h2>Entrenamiento completado</h2>
       <p>¿Quieres continuar con la tarea principal?</p>
-      <button id="postTrainingBtn">Sí, continuar</button>
+      <div class="button-row">
+        <button id="postTrainingBtn" type="button">Si, continuar</button>
+      </div>
     </div>
   </div>
 
@@ -226,100 +198,105 @@
 
   <div id="surveyScreen" class="screen">
     <div class="panel">
-      <h1>Cuestionario final</h1>
+      <h2>Cuestionario final</h2>
       <p>Responde del 0 (nada) al 100 (máximo) en cada ítem.</p>
       <form id="surveyForm">
         <div class="survey-item">
           <label for="q_fatiga">Fatiga mental</label>
           <div class="survey-help">Cómo de mentalmente agotado/a te sientes tras la tarea.</div>
           <div class="survey-control">
-            <input id="q_fatiga" type="range" min="0" max="100" value="50" />
-            <span class="survey-value" data-for="q_fatiga">50</span>
+            <input id="q_fatiga" type="range" min="0" max="100" value="50" data-touched="false" />
+            <span class="survey-value" data-for="q_fatiga">Sin responder</span>
           </div>
         </div>
         <div class="survey-item">
           <label for="q_esfuerzo">Esfuerzo percibido</label>
           <div class="survey-help">Cantidad de esfuerzo mental que te ha exigido mantener el rendimiento.</div>
           <div class="survey-control">
-            <input id="q_esfuerzo" type="range" min="0" max="100" value="50" />
-            <span class="survey-value" data-for="q_esfuerzo">50</span>
+            <input id="q_esfuerzo" type="range" min="0" max="100" value="50" data-touched="false" />
+            <span class="survey-value" data-for="q_esfuerzo">Sin responder</span>
           </div>
         </div>
         <div class="survey-item">
           <label for="q_atencion">Nivel de atención/concentración</label>
           <div class="survey-help">Grado en que lograste mantener la atención en el objetivo.</div>
           <div class="survey-control">
-            <input id="q_atencion" type="range" min="0" max="100" value="50" />
-            <span class="survey-value" data-for="q_atencion">50</span>
+            <input id="q_atencion" type="range" min="0" max="100" value="50" data-touched="false" />
+            <span class="survey-value" data-for="q_atencion">Sin responder</span>
           </div>
         </div>
         <div class="survey-item">
           <label for="q_somnolencia">Somnolencia</label>
           <div class="survey-help">Sensación de sueño o cabeceo durante la tarea.</div>
           <div class="survey-control">
-            <input id="q_somnolencia" type="range" min="0" max="100" value="50" />
-            <span class="survey-value" data-for="q_somnolencia">50</span>
+            <input id="q_somnolencia" type="range" min="0" max="100" value="50" data-touched="false" />
+            <span class="survey-value" data-for="q_somnolencia">Sin responder</span>
           </div>
         </div>
         <div class="survey-item">
           <label for="q_distraccion">Distracción/mente divagando</label>
           <div class="survey-help">Frecuencia con la que tu mente se fue a otros pensamientos.</div>
           <div class="survey-control">
-            <input id="q_distraccion" type="range" min="0" max="100" value="50" />
-            <span class="survey-value" data-for="q_distraccion">50</span>
+            <input id="q_distraccion" type="range" min="0" max="100" value="50" data-touched="false" />
+            <span class="survey-value" data-for="q_distraccion">Sin responder</span>
           </div>
         </div>
         <div class="survey-item">
           <label for="q_motivacion">Motivación</label>
           <div class="survey-help">Ganas de hacerlo bien y seguir centrado/a en la tarea.</div>
           <div class="survey-control">
-            <input id="q_motivacion" type="range" min="0" max="100" value="50" />
-            <span class="survey-value" data-for="q_motivacion">50</span>
+            <input id="q_motivacion" type="range" min="0" max="100" value="50" data-touched="false" />
+            <span class="survey-value" data-for="q_motivacion">Sin responder</span>
           </div>
         </div>
         <div class="survey-item">
           <label for="q_estres">Estrés/tensión</label>
           <div class="survey-help">Nivel de presión o nerviosismo que sentiste.</div>
           <div class="survey-control">
-            <input id="q_estres" type="range" min="0" max="100" value="50" />
-            <span class="survey-value" data-for="q_estres">50</span>
+            <input id="q_estres" type="range" min="0" max="100" value="50" data-touched="false" />
+            <span class="survey-value" data-for="q_estres">Sin responder</span>
           </div>
         </div>
         <div class="survey-item">
           <label for="q_dificultad">Dificultad percibida</label>
           <div class="survey-help">Qué tan difícil te resultó mantener el cursor sobre el objetivo.</div>
           <div class="survey-control">
-            <input id="q_dificultad" type="range" min="0" max="100" value="50" />
-            <span class="survey-value" data-for="q_dificultad">50</span>
+            <input id="q_dificultad" type="range" min="0" max="100" value="50" data-touched="false" />
+            <span class="survey-value" data-for="q_dificultad">Sin responder</span>
           </div>
         </div>
         <div class="survey-item">
           <label for="q_carga">Carga mental global</label>
           <div class="survey-help">Exigencia mental total que percibiste en la tarea.</div>
           <div class="survey-control">
-            <input id="q_carga" type="range" min="0" max="100" value="50" />
-            <span class="survey-value" data-for="q_carga">50</span>
+            <input id="q_carga" type="range" min="0" max="100" value="50" data-touched="false" />
+            <span class="survey-value" data-for="q_carga">Sin responder</span>
           </div>
         </div>
         <div class="survey-item">
           <label for="q_monotonia">Monotonía/aburrimiento</label>
           <div class="survey-help">Cuánto se te hizo repetitiva o aburrida la tarea.</div>
           <div class="survey-control">
-            <input id="q_monotonia" type="range" min="0" max="100" value="50" />
-            <span class="survey-value" data-for="q_monotonia">50</span>
+            <input id="q_monotonia" type="range" min="0" max="100" value="50" data-touched="false" />
+            <span class="survey-value" data-for="q_monotonia">Sin responder</span>
           </div>
         </div>
-        <button id="surveySubmitBtn" type="submit">Finalizar y descargar</button>
+        <div class="button-row" id="surveySubmitRow">
+          <button id="surveySubmitBtn" type="submit">Finalizar y descargar</button>
+        </div>
       </form>
     </div>
   </div>
 
   <div id="endScreen" class="screen">
-    <div class="panel">
-      <h1>Finalizado</h1>
+    <div class="panel intermediate-panel">
+      <h2>Finalizado</h2>
       <p>Gracias por participar.</p>
-      <button id="downloadBtn">Descargar datos (CSV)</button>
+      <div class="button-row">
+        <button id="downloadBtn" type="button">Descargar datos (CSV)</button>
+      </div>
     </div>
+  </div>
   </div>
 
   <script>
@@ -346,23 +323,22 @@
     const ctx = canvas.getContext("2d");
 
     const BLOB_SDS = [20, 40, 60];
+    const DELAYS_MS = [0, 50, 100, 150];
     const REPETITIONS = 3;
+    const TARGET_RW_SD = 6;
+    const MAX_DELAY_MS = Math.max(...DELAYS_MS);
     const PRODUCTION = {
-      rwSDs: [3, 6, 9],
       trialMs: 20000
     };
     const DEBUG = {
-      rwSDs: [3, 6, 9],
-      trialMs: 100
+      trialMs: 5000
     };
-    let TRAINING_DURATION_MS = 20000;
+    let TRAINING_DURATION_MS = 5000;
 
-    let RW_SDS = PRODUCTION.rwSDs;
     let TRIAL_DURATION_MS = PRODUCTION.trialMs;
 
-    const noiseContrast = 0.92; // Michelson
     const noiseMean = 0.5;
-    const noiseAmp = noiseContrast / 2;
+    const noiseSd = 0.1;
 
     let participantId = "";
     let blockLabel = "pre";
@@ -396,7 +372,9 @@
     };
     let target = { x: 0, y: 0 };
     let cursor = { x: 0, y: 0 };
+    let delayedCursor = { x: 0, y: 0 };
     let cursorReady = false;
+    let cursorHistory = [];
     let recenterFramesRemaining = 0;
 
     let dataLog = null;
@@ -434,9 +412,9 @@
     function buildTrials() {
       const list = [];
       for (let r = 0; r < REPETITIONS; r++) {
-        for (const rw of RW_SDS) {
-          for (const blob of BLOB_SDS) {
-            list.push({ rwSD: rw, blobSD: blob });
+        for (const delayMs of DELAYS_MS) {
+          for (const blobSD of BLOB_SDS) {
+            list.push({ blobSD, delayMs });
           }
         }
       }
@@ -456,10 +434,12 @@
         frame: new Int32Array(logCapacity),
         block: new Int8Array(logCapacity),
         trial: new Int32Array(logCapacity),
-        rwSD: new Float32Array(logCapacity),
         blobSD: new Float32Array(logCapacity),
+        delayMs: new Float32Array(logCapacity),
         targetX: new Float32Array(logCapacity),
         targetY: new Float32Array(logCapacity),
+        pointerX: new Float32Array(logCapacity),
+        pointerY: new Float32Array(logCapacity),
         cursorX: new Float32Array(logCapacity),
         cursorY: new Float32Array(logCapacity)
       };
@@ -482,10 +462,12 @@
         frame: new Int32Array(newCap),
         block: new Int8Array(newCap),
         trial: new Int32Array(newCap),
-        rwSD: new Float32Array(newCap),
         blobSD: new Float32Array(newCap),
+        delayMs: new Float32Array(newCap),
         targetX: new Float32Array(newCap),
         targetY: new Float32Array(newCap),
+        pointerX: new Float32Array(newCap),
+        pointerY: new Float32Array(newCap),
         cursorX: new Float32Array(newCap),
         cursorY: new Float32Array(newCap)
       };
@@ -494,10 +476,12 @@
       next.frame.set(dataLog.frame);
       next.block.set(dataLog.block);
       next.trial.set(dataLog.trial);
-      next.rwSD.set(dataLog.rwSD);
       next.blobSD.set(dataLog.blobSD);
+      next.delayMs.set(dataLog.delayMs);
       next.targetX.set(dataLog.targetX);
       next.targetY.set(dataLog.targetY);
+      next.pointerX.set(dataLog.pointerX);
+      next.pointerY.set(dataLog.pointerY);
       next.cursorX.set(dataLog.cursorX);
       next.cursorY.set(dataLog.cursorY);
       dataLog = next;
@@ -589,7 +573,7 @@
         const cctx = c.getContext("2d");
         const img = cctx.createImageData(frameSize, frameSize);
         for (let i = 0; i < frameSize * frameSize; i++) {
-          const val = noiseMean + noiseAmp * (Math.random() * 2 - 1);
+          const val = noiseMean + noiseSd * gaussianRandom();
           const gray = Math.round(Math.max(0, Math.min(1, val)) * 255);
           const idx = i * 4;
           img.data[idx] = gray;
@@ -614,12 +598,60 @@
       ctx.restore();
     }
 
+    function seedCursorHistory(time) {
+      if (!cursorReady) {
+        cursor.x = width / 2;
+        cursor.y = height / 2;
+      }
+      delayedCursor.x = cursor.x;
+      delayedCursor.y = cursor.y;
+      cursorHistory = [{ time, x: cursor.x, y: cursor.y }];
+    }
+
+    function recordCursorSample(time) {
+      if (!cursorReady) {
+        cursor.x = width / 2;
+        cursor.y = height / 2;
+      }
+      cursorHistory.push({ time, x: cursor.x, y: cursor.y });
+      const oldestAllowed = time - MAX_DELAY_MS - 250;
+      while (cursorHistory.length > 2 && cursorHistory[1].time < oldestAllowed) {
+        cursorHistory.shift();
+      }
+    }
+
+    function getDelayedCursor(time, delayMs) {
+      if (!delayMs || cursorHistory.length === 0) {
+        return { x: cursor.x, y: cursor.y };
+      }
+      const targetTime = time - delayMs;
+      let before = cursorHistory[0];
+      let after = cursorHistory[cursorHistory.length - 1];
+      for (let i = cursorHistory.length - 1; i >= 0; i--) {
+        if (cursorHistory[i].time <= targetTime) {
+          before = cursorHistory[i];
+          after = cursorHistory[Math.min(i + 1, cursorHistory.length - 1)];
+          break;
+        }
+      }
+      const span = after.time - before.time;
+      if (span <= 0) {
+        return { x: before.x, y: before.y };
+      }
+      const alpha = Math.max(0, Math.min(1, (targetTime - before.time) / span));
+      return {
+        x: before.x + (after.x - before.x) * alpha,
+        y: before.y + (after.y - before.y) * alpha
+      };
+    }
+
     function startTrial() {
       const current = trials[trialIndex];
       trialStart = performance.now();
       lastFrame = trialStart;
       frameCount = 0;
-      hudText.textContent = `Bloque ${trialIndex + 1}/${trials.length}`;
+      seedCursorHistory(trialStart);
+      hudText.textContent = `Bloque ${trialIndex + 1}/${trials.length} | delay ${current.delayMs} ms`;
     }
 
     function startTraining() {
@@ -627,6 +659,7 @@
       trialStart = performance.now();
       lastFrame = trialStart;
       frameCount = 0;
+      seedCursorHistory(trialStart);
       hudText.textContent = "Entrenamiento (20 s)";
     }
 
@@ -649,7 +682,7 @@
         const dx = centerX - target.x;
         const dy = centerY - target.y;
         const dist = Math.hypot(dx, dy) || 1;
-        const step = current.rwSD;
+        const step = TARGET_RW_SD;
         target.x += (dx / dist) * step;
         target.y += (dy / dist) * step;
         recenterFramesRemaining -= 1;
@@ -657,8 +690,8 @@
         if (randIndex >= randCapacity) {
           growDataLog(logCapacity + 1);
         }
-        const stepX = randX[randIndex] * current.rwSD;
-        const stepY = randY[randIndex] * current.rwSD;
+        const stepX = randX[randIndex] * TARGET_RW_SD;
+        const stepY = randY[randIndex] * TARGET_RW_SD;
         randIndex += 1;
         target.x += stepX;
         target.y += stepY;
@@ -700,6 +733,9 @@
       frameCount += 1;
       updateTarget(time - lastFrame);
       lastFrame = time;
+      recordCursorSample(time);
+      const visualDelay = trainingActive ? 0 : current.delayMs;
+      delayedCursor = getDelayedCursor(time, visualDelay);
 
       updateNoise();
 
@@ -717,7 +753,7 @@
         cursor.x = width / 2;
         cursor.y = height / 2;
       }
-      ctx.drawImage(cursorBlob, cursor.x - cursorRadius, cursor.y - cursorRadius);
+      ctx.drawImage(cursorBlob, delayedCursor.x - cursorRadius, delayedCursor.y - cursorRadius);
 
       if (logCount >= logCapacity) growDataLog(logCapacity + 1);
       dataLog.tExp[logCount] = time - expStart;
@@ -725,12 +761,14 @@
       dataLog.frame[logCount] = frameCount;
       dataLog.block[logCount] = blockLabel === "pre" ? 1 : 2;
       dataLog.trial[logCount] = trainingActive ? 0 : (trialIndex + 1);
-      dataLog.rwSD[logCount] = current.rwSD;
       dataLog.blobSD[logCount] = current.blobSD;
+      dataLog.delayMs[logCount] = visualDelay;
       dataLog.targetX[logCount] = target.x;
       dataLog.targetY[logCount] = target.y;
-      dataLog.cursorX[logCount] = cursor.x;
-      dataLog.cursorY[logCount] = cursor.y;
+      dataLog.pointerX[logCount] = cursor.x;
+      dataLog.pointerY[logCount] = cursor.y;
+      dataLog.cursorX[logCount] = delayedCursor.x;
+      dataLog.cursorY[logCount] = delayedCursor.y;
       logCount += 1;
 
       requestAnimationFrame(drawFrame);
@@ -747,8 +785,8 @@
       expStart = performance.now();
       pausedAfterTraining = false;
       trainingCondition = {
-        rwSD: RW_SDS[0],
-        blobSD: BLOB_SDS[Math.floor(BLOB_SDS.length / 2)]
+        blobSD: BLOB_SDS[Math.floor(BLOB_SDS.length / 2)],
+        delayMs: 0
       };
       target.x = width / 2;
       target.y = height / 2;
@@ -775,7 +813,7 @@
 
     function downloadTaskCSV() {
       const header = [
-        "participant", "timestampExp", "timestampTrial", "frame", "block", "trial", "rwSD", "blobSD", "targetX", "targetY", "cursorX", "cursorY"
+        "participant", "timestampExp", "timestampTrial", "frame", "block", "trial", "blobSD", "delayMs", "targetX", "targetY", "pointerX", "pointerY", "cursorX", "cursorY"
       ];
       const rows = new Array(logCount);
       for (let i = 0; i < logCount; i++) {
@@ -786,10 +824,12 @@
           dataLog.frame[i],
           dataLog.block[i],
           dataLog.trial[i],
-          dataLog.rwSD[i],
           dataLog.blobSD[i],
+          dataLog.delayMs[i],
           dataLog.targetX[i].toFixed(2),
           dataLog.targetY[i].toFixed(2),
+          Math.round(dataLog.pointerX[i]),
+          Math.round(dataLog.pointerY[i]),
           Math.round(dataLog.cursorX[i]),
           Math.round(dataLog.cursorY[i])
         ].join(",");
@@ -864,9 +904,9 @@
     function updateSurveyValue(id, value) {
       const el = document.querySelector(`.survey-value[data-for="${id}"]`);
       if (el) {
-        el.textContent = value;
         const input = document.getElementById(id);
         const touched = input && input.dataset.touched === "true";
+        el.textContent = touched ? value : "Sin responder";
         el.classList.toggle("touched", Boolean(touched));
       }
     }
@@ -880,10 +920,9 @@
     function initSurveySliders() {
       const sliders = document.querySelectorAll("#surveyForm input[type='range']");
       sliders.forEach(input => {
-        const value = Math.floor(Math.random() * 101);
-        input.value = value;
+        input.value = 50;
         input.dataset.touched = "false";
-        updateSurveyValue(input.id, value);
+        updateSurveyValue(input.id, Number(input.value));
       });
       updateSurveyReady();
     }
@@ -912,11 +951,9 @@
       };
       initSurveySliders();
       if (debugCheck.checked) {
-        RW_SDS = DEBUG.rwSDs;
         TRIAL_DURATION_MS = DEBUG.trialMs;
         TRAINING_DURATION_MS = DEBUG.trialMs;
       } else {
-        RW_SDS = PRODUCTION.rwSDs;
         TRIAL_DURATION_MS = PRODUCTION.trialMs;
         TRAINING_DURATION_MS = PRODUCTION.trialMs;
       }

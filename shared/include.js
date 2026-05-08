@@ -66,13 +66,16 @@
     '      <div class="nav-dropdown">' +
     '        <span class="nav-link nav-button" tabindex="0">Experiments</span>' +
     '        <div class="dropdown-menu" aria-label="Experiments">' +
-    '          <a href="{{ROOT}}experiments/visoespatial_span.html">Corsi Blocks (Full)</a>' +
-    '          <a href="{{ROOT}}experiments/fonologic_span.html">Digit Span</a>' +
-    '          <a href="{{ROOT}}experiments/posner.html">Posner (Tactile)</a>' +
-    '          <a href="{{ROOT}}experiments/coordinacion_visomotora.html">Coordinacion visomotora</a>' +
-    '          <a href="{{ROOT}}experiments/random_dot_motion.html">Coherencia de movimiento (RDM)</a>' +
-    '          <a href="{{ROOT}}experiments/ebbinghaus_pest.html">Ilusion de Ebbinghaus (PEST)</a>' +
-    '          <a href="{{ROOT}}experiments/busqueda_selectiva.html">Busqueda selectiva (paralela vs serie)</a>' +
+    '          <a href="{{ROOT}}experiments/01_span_visuoespacial_corsi_directo.html">Span visuoespacial (Corsi) - directo</a>' +
+    '          <a href="{{ROOT}}experiments/02_span_visuoespacial_corsi_inverso.html">Span visuoespacial (Corsi) - inverso</a>' +
+    '          <a href="{{ROOT}}experiments/03_span_fonologico_digitos_directo.html">Span fonologico (digitos) - directo</a>' +
+    '          <a href="{{ROOT}}experiments/04_span_fonologico_digitos_inverso.html">Span fonologico (digitos) - inverso</a>' +
+    '          <a href="{{ROOT}}experiments/05_posner_atencion_espacial.html">Tarea de Posner - atencion espacial</a>' +
+    '          <a href="{{ROOT}}experiments/06_seguimiento_continuo_objetivo.html">Seguimiento continuo de objetivo</a>' +
+    '          <a href="{{ROOT}}experiments/07_seguimiento_continuo_delay_visomotor.html">Seguimiento continuo - delay visomotor</a>' +
+    '          <a href="{{ROOT}}experiments/08_movimiento_coherente_rdm_umbral_adaptativo.html">Movimiento coherente (RDM) - umbral adaptativo</a>' +
+    '          <a href="{{ROOT}}experiments/09_ilusion_ebbinghaus_estimulos_constantes.html">Ilusion de Ebbinghaus - estimulos constantes</a>' +
+    '          <a href="{{ROOT}}experiments/10_busqueda_selectiva_paralela_serie.html">Busqueda selectiva - paralela vs serie</a>' +
     '        </div>' +
     '      </div>' +
     '      <button class="theme-toggle" type="button" id="theme-toggle" aria-pressed="false">Dark mode</button>' +
